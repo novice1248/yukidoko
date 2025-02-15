@@ -43,7 +43,7 @@ const Auth: React.FC = () => {
         setAlertMessage("ログインに成功しました。");
         setAlertSeverity("success");
         setOpen(true);
-        navigate("/"); // ログイン成功後に遷移
+        navigate("/Logined"); // ログイン成功後に遷移
       }
     } catch (error) {
       setAlertMessage(error.message);
