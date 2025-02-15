@@ -3,7 +3,6 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import NotLogin from "./pages/NotLogin";
 //Routes、Route、Link、BrowserRouterをインポートし、ルーティング
-import Home from "./pages/Home"; // ホームページのコンポーネント
 import GoogleMapAPI from "./pages/GoogleMap";
 import Geolocation from "./pages/GeoLocation";
 //import GoogleMap from "./pages/GoogleMap"; // Aboutページのコンポーネント
