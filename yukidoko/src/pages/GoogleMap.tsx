@@ -1,16 +1,16 @@
 import React, { useState, useEffect, useRef } from "react";
-import { GoogleMap, Marker, useJsApiLoader } from "@react-google-maps/api";
+import { GoogleMap, useJsApiLoader, Marker, Polyline } from "@react-google-maps/api";
 
-/* エラーテキスト */
 const ErrorText = () => (
-  <p className="App-error-text">geolocation IS NOT available</p>
+  <p className="App-error-text">Geolocation IS NOT available</p>
 );
 
-// 位置情報の型を定義
 interface Position {
   latitude: number | null;
   longitude: number | null;
 }
+
+const libraries: ("places" | "geometry" | "drawing" | "marker")[] = ["marker"];
 
 function Geolocation() {
   const [isAvailable, setAvailable] = useState(false);
@@ -18,80 +18,126 @@ function Geolocation() {
     latitude: null,
     longitude: null,
   });
+  const [markers, setMarkers] = useState<google.maps.LatLngLiteral[]>([]); // マーカーを保持する型を修正
+  const [path, setPath] = useState<google.maps.LatLngLiteral[]>([]); // ラインの座標を保持
 
-  // useEffectが実行されているかどうかを判定するために用意しています
-  const isFirstRef = useRef(true);
-
-  /*
-   * ページ描画時にGeolocation APIが使えるかどうかをチェックしています
-   * もし使えなければその旨のエラーメッセージを表示させます
-   */
   useEffect(() => {
-    isFirstRef.current = false;
     if ("geolocation" in navigator) {
       setAvailable(true);
-      getCurrentPosition(); // 位置情報を取得
+      getCurrentPosition();
+    } else {
+      setAvailable(false);
     }
+
+    const interval = setInterval(getCurrentPosition, 5000);
+    return () => clearInterval(interval);
   }, []);
 
   const getCurrentPosition = () => {
-    navigator.geolocation.getCurrentPosition((position) => {
-      const { latitude, longitude } = position.coords;
-      setPosition({ latitude, longitude });
-    });
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        const { latitude, longitude } = position.coords;
+        const newPosition = { lat: latitude, lng: longitude };
+
+        setPosition({ latitude, longitude });
+
+        // ラインを描くためにpathに追加
+        setPath((prevPath) => [...prevPath, newPosition]);
+      },
+      (error) => {
+        console.error("位置情報の取得に失敗しました", error);
+        setAvailable(false);
+      }
+    );
   };
 
-  // useEffect実行前であれば、"Loading..."という呼び出しを表示させます
-  if (isFirstRef.current) return <div className="App">Loading...</div>;
-
-  // 位置情報が取得できなかった場合のエラーメッセージ
   if (!isAvailable) return <ErrorText />;
-
-  return <GoogleMapAPI position={position} />;
+  return <GoogleMapAPI position={position} markers={markers} setMarkers={setMarkers} path={path} />;
 }
 
-function GoogleMapAPI({ position }: { position: Position }) {
+function GoogleMapAPI({
+  position,
+  markers,
+  setMarkers,
+  path,
+}: {
+  position: Position;
+  markers: google.maps.LatLngLiteral[];
+  setMarkers: React.Dispatch<React.SetStateAction<google.maps.LatLngLiteral[]>>;
+  path: google.maps.LatLngLiteral[];
+}) {
   const { isLoaded } = useJsApiLoader({
-    id: "google-map-script",
-    googleMapsApiKey: "AIzaSyCdasc3THxZXomus-ULUMfeAd3y4S6dKho",
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAP_API_KEY || "",
+    libraries: libraries,
   });
 
-  const [map, setMap] = React.useState(null);
+  const mapRef = useRef<google.maps.Map | null>(null);
 
-  const onLoad = React.useCallback(function callback(map) {
-    setMap(map);
-  }, []);
-
-  const onUnmount = React.useCallback(function callback(map) {
-    setMap(null);
-  }, []);
-
-  const containerStyle = {
-    width: "400px",
-    height: "400px",
+  // クリック時にマーカーを追加する関数
+  const handleMapClick = (event: google.maps.MapMouseEvent) => {
+    const { latLng } = event;
+    if (latLng) {
+      const newMarker = {
+        lat: latLng.lat(),
+        lng: latLng.lng(),
+      };
+      setMarkers((prevMarkers) => [...prevMarkers, newMarker]); // クリックした位置にマーカーを追加
+    }
   };
 
-  return isLoaded ? (
+  // 現在位置のラインを描画
+  useEffect(() => {
+    if (isLoaded && mapRef.current) {
+      const polyline = new google.maps.Polyline({
+        path: path, // pathに基づいてラインを描画
+        geodesic: true, // 地球の曲率を考慮して描画
+        strokeColor: "#FF0000", // ラインの色
+        strokeOpacity: 1.0, // ラインの透明度
+        strokeWeight: 2, // ラインの太さ
+      });
+      polyline.setMap(mapRef.current); // 地図にラインを描画
+    }
+  }, [isLoaded, path]); // pathが変更されるたびにラインを更新
+
+  if (!isLoaded) return <div className="App">Google Maps APIのロード中...</div>;
+
+  const mapOptions = {
+    mapId: "dc2b461c6c6edfa6", // ここに Map ID を指定
+    // その他のオプション
+  };
+
+  return (
     <GoogleMap
-      mapContainerStyle={containerStyle}
+      mapContainerStyle={{ width: "400px", height: "400px" }}
       center={{
-        lat: position.latitude || 0, // 取得した位置情報を地図の中心に設定
-        lng: position.longitude || 0, // 取得した位置情報を地図の中心に設定
+        lat: position.latitude || 0,
+        lng: position.longitude || 0,
       }}
       zoom={18}
-      onLoad={onLoad}
-      onUnmount={onUnmount}
+      options={mapOptions}
+      onLoad={(map) => {
+        mapRef.current = map;
+      }}
+      onClick={handleMapClick} // クリック時にマーカーを追加
     >
-      {/* Child components, such as markers, info windows, etc. */}
-      <Marker
-        position={{
-          lat: position.latitude || 0, // 取得した位置情報を地図の中心に設定
-          lng: position.longitude || 0, // 取得した位置情報を地図の中心に設定
+      {/* markers 配列からマーカーを描画 */}
+      {markers.map((marker, index) => (
+        <Marker
+          key={index}
+          position={marker} // マーカーの位置を設定
+        />
+      ))}
+      {/* 現在位置に基づくラインを描画 */}
+      <Polyline
+        path={path}
+        options={{
+          geodesic: true,
+          strokeColor: "#FF0000",
+          strokeOpacity: 1.0,
+          strokeWeight: 2,
         }}
       />
     </GoogleMap>
-  ) : (
-    <></>
   );
 }
 
