@@ -29,6 +29,7 @@ const Auth: React.FC = () => {
   const [isRegistering, setIsRegistering] = useState(true); // 登録/ログイン切り替え
   const navigate = useNavigate();
 
+
   const handleAuthAction = async () => {
     try {
       if (isRegistering) {
@@ -61,7 +62,7 @@ const Auth: React.FC = () => {
       setAlertMessage("Google ログインに成功しました。");
       setAlertSeverity("success");
       setOpen(true);
-      navigate("/Logined");
+      navigate("/Logined"); // ログイン成功後に遷移
     } catch (error) {
       setAlertMessage(error.message);
       setAlertSeverity("error");

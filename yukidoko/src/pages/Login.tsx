@@ -8,6 +8,7 @@ import {
     onAuthStateChanged,
     signInWithPopup,
     signInWithEmailAndPassword,
+    //signInWithRedirect,
 } from "firebase/auth";
 import {
     Box,
@@ -38,6 +39,9 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
 
+console.log("Firebase Config:", firebaseConfig);
+
+
 export const Login: React.FC = () => {
     const [user, setUser] = useState<User | null>(null);
     const [email, setEmail] = useState("");
@@ -61,20 +65,47 @@ export const Login: React.FC = () => {
         return () => unsubscribe();
     }, [navigate]);
 
+
     const signIn = async () => {
         try {
             const result = await signInWithPopup(auth, provider);
-            console.log("Google ログイン成功:", result.user); // 成功時のユーザー情報を確認
-            setAlertMessage("Google ログインに成功しました。"); // 成功メッセージ
-            setAlertSeverity("success");
-            setOpen(true);
+            console.log("Google ログイン成功:", result.user);
+
+            // ユーザーが Firebase に登録されているか確認
+            const user = result.user;
+            const userRef = firestore.collection("users").doc(user.uid);
+
+            const doc = await userRef.get();
+            if (!doc.exists) {
+                // ユーザーが登録されていない場合、直接新規登録画面へ遷移
+                navigate("/Auth");
+            } else {
+                // 既存のユーザーの場合、通常の処理
+                setAlertMessage("Google ログインに成功しました。");
+                setAlertSeverity("success");
+                setOpen(true);
+            }
         } catch (error: any) {
             console.error("Google ログインエラー:", error.code, error.message);
-            setAlertMessage(error.message); // エラーメッセージを表示
+            setAlertMessage(error.message);
             setAlertSeverity("error");
             setOpen(true);
         }
     };
+
+
+
+
+
+    /*
+        const signIn = async () => {
+            try {
+                await signInWithRedirect(auth, provider);
+            } catch (error: any) {
+                console.error("Google ログインエラー:", error.code, error.message);
+            }
+        };
+    */
 
 
     const signInWithEmail = async () => {
