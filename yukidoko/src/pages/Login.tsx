@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Routes, Route } from "react-router-dom";
 import { initializeApp, getApps } from "firebase/app";
 import {
     GoogleAuthProvider,
@@ -54,7 +54,7 @@ export const Login: React.FC = () => {
                 setAlertMessage("ログインが完了しました。"); // ログイン完了メッセージ
                 setAlertSeverity("success");
                 setOpen(true);
-                navigate("/"); // リダイレクト
+                navigate("/Logined"); // リダイレクト
             }
         });
 
