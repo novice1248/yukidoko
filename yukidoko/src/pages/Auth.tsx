@@ -61,7 +61,7 @@ const Auth: React.FC = () => {
       setAlertMessage("Google ログインに成功しました。");
       setAlertSeverity("success");
       setOpen(true);
-      navigate("/home");
+      navigate("/Logined");
     } catch (error) {
       setAlertMessage(error.message);
       setAlertSeverity("error");

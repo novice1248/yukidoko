@@ -8,7 +8,7 @@ import Auth from "./pages/Auth"; // 新規登録ページのコンポーネン�
 import Logout from "./pages/Logout"; // ログアウトページのコンポーネント
 //import GoogleMap from "./pages/GoogleMap"; // Aboutページのコンポーネント
 import styles from './css/App.module.css';
-
+import Logined from "./pages/Logined";
 import Snowfall from "./Snowfall";
 
 function App() {
@@ -24,6 +24,7 @@ function App() {
           {/* ログイン・新規登録 (右上) */}
           <div className={styles.navAuth}>
             <Link to="/Login">ログイン</Link>
+            <Link to="/Logout">ログアウト</Link>
           </div>
 
           <ul>
@@ -48,7 +49,7 @@ function App() {
           <Route path="/NotLogin" element={<NotLogin />} />
           <Route path="/Logout" element={<Logout />} />{/* ログアウトルートを追加 */}
           <Route path="/Search" element={<GoogleMapAPI />} />
-
+          <Route path="/Logined" element={<Logined />} />
         </Routes>
 
       </div>
