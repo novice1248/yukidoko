@@ -4,6 +4,8 @@ import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
+  signOut,
+  signInWithEmailAndPassword // 追加
 } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import {
@@ -12,28 +14,37 @@ import {
   Container,
   Grid,
   TextField,
-  Typography, // 追加
-  Paper, // 追加
-  Snackbar, // 追加
-  Alert, // 追加
+  Typography,
+  Paper,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 
 const Auth: React.FC = () => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
-  const [open, setOpen] = useState(false); // Snackbar の状態
-  const [alertMessage, setAlertMessage] = useState(""); // Snackbar のメッセージ
-  const [alertSeverity, setAlertSeverity] = useState<"success" | "error">("info"); // Snackbar の種類
-
+  const [open, setOpen] = useState(false);
+  const [alertMessage, setAlertMessage] = useState("");
+  const [alertSeverity, setAlertSeverity] = useState<"success" | "error">("info");
+  const [isRegistering, setIsRegistering] = useState(true); // 登録/ログイン切り替え
   const navigate = useNavigate();
 
-  const Register = async () => {
+  const handleAuthAction = async () => {
     try {
-      await createUserWithEmailAndPassword(auth, email, password);
-      setAlertMessage("登録に成功しました。");
-      setAlertSeverity("success");
-      setOpen(true);
-      navigate("/home");
+      if (isRegistering) {
+        await createUserWithEmailAndPassword(auth, email, password);
+        setAlertMessage("登録に成功しました。再度ログインしてください。");
+        setAlertSeverity("success");
+        setOpen(true);
+        await signOut(auth);
+        navigate("/login"); // 登録成功後に遷移
+      } else {
+        await signInWithEmailAndPassword(auth, email, password); // ログイン
+        setAlertMessage("ログインに成功しました。");
+        setAlertSeverity("success");
+        setOpen(true);
+        navigate("/"); // ログイン成功後に遷移
+      }
     } catch (error) {
       setAlertMessage(error.message);
       setAlertSeverity("error");
@@ -41,6 +52,7 @@ const Auth: React.FC = () => {
       console.error(error);
     }
   };
+
 
   const signInWithGoogle = async () => {
     const provider = new GoogleAuthProvider();
@@ -80,7 +92,7 @@ const Auth: React.FC = () => {
           <Grid item xs={12} sm={8} md={6}>
             <Paper elevation={3} sx={{ padding: 4 }}>
               <Typography variant="h5" align="center" gutterBottom>
-                新規登録
+                {isRegistering ? "新規登録" : "ログイン"} {/* タイトル切り替え */}
               </Typography>
               <Box component="form">
                 <TextField
@@ -108,18 +120,26 @@ const Auth: React.FC = () => {
                   variant="contained"
                   color="primary"
                   sx={{ mt: 2 }}
-                  onClick={Register}
+                  onClick={handleAuthAction} // 共通の関数に変更
                 >
-                  メールアドレスで登録
+                  {isRegistering ? "メールアドレスで登録" : "メールアドレスでログイン"} {/* ボタンテキスト切り替え */}
                 </Button>
                 <Button
                   fullWidth
                   variant="contained"
-                  color="secondary" // Google ログインは secondary
+                  color="secondary"
                   sx={{ mt: 2 }}
                   onClick={signInWithGoogle}
                 >
-                  Google で登録
+                  Google で{isRegistering ? "登録" : "ログイン"} {/* Googleボタンテキスト切り替え */}
+                </Button>
+                <Button // 登録/ログイン切り替えボタン
+                  fullWidth
+                  variant="text"
+                  sx={{ mt: 2 }}
+                  onClick={() => setIsRegistering(!isRegistering)}
+                >
+                  {isRegistering ? "既にアカウントをお持ちですか？ログイン" : "アカウントをお持ちではありませんか？登録"}
                 </Button>
               </Box>
             </Paper>

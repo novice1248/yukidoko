@@ -54,9 +54,7 @@ export const Login: React.FC = () => {
                 setAlertMessage("ログインが完了しました。"); // ログイン完了メッセージ
                 setAlertSeverity("success");
                 setOpen(true);
-                setTimeout(() => {
-                    navigate("/");
-                }, 3000); // 3秒後にリダイレクト
+                navigate("/"); // 3秒後にリダイレクト
             }
         });
 
