@@ -24,7 +24,7 @@ import {
 // Firebase 設定 (環境変数から取得)
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-    authDomain: import.meta.env.VITE_FIREBASE_DOMAIN,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
     projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
     storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
     messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
@@ -54,7 +54,7 @@ export const Login: React.FC = () => {
                 setAlertMessage("ログインが完了しました。"); // ログイン完了メッセージ
                 setAlertSeverity("success");
                 setOpen(true);
-                navigate("/"); // 3秒後にリダイレクト
+                navigate("/"); // リダイレクト
             }
         });
 
@@ -69,7 +69,7 @@ export const Login: React.FC = () => {
             setAlertSeverity("success");
             setOpen(true);
         } catch (error: any) {
-            console.error("Google ログインエラー:", error);
+            console.error("Google ログインエラー:", error.code, error.message);
             setAlertMessage(error.message); // エラーメッセージを表示
             setAlertSeverity("error");
             setOpen(true);
