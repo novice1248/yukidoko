@@ -1,6 +1,8 @@
 import { Routes, Route, Link, BrowserRouter } from "react-router-dom";
 //Routes、Route、Link、BrowserRouterをインポートし、ルーティング
 import Home from "./pages/Home"; // ホームページのコンポーネント
+import GoogleMapAPI from "./pages/GoogleMap";
+import Geolocation from "./pages/GeoLocation";
 //import GoogleMap from "./pages/GoogleMap"; // Aboutページのコンポーネント
 import styles from './css/App.module.css';
 
@@ -18,12 +20,17 @@ function App() {
             <li>
               <Link to="/googleMap">GoogleMap</Link>
             </li>
+            <li>
+              <Link to="/geolocation">Geolocation</Link>
+            </li>
           </ul>
         </nav>
 
         {/* ルーティングの設定 */}
         <Routes>
-          <Route  path="/" element={<Home />} />
+          <Route path="/" element={<Home />} />
+          <Route path="/googleMap" element={<GoogleMapAPI />} />
+          <Route path="/geolocation" element={<Geolocation />} />
         </Routes>
       </div>
     </BrowserRouter>
