@@ -1,5 +1,10 @@
-import React, { useState, useEffect, useRef } from "react";
-import { GoogleMap, useJsApiLoader, Marker, Polyline } from "@react-google-maps/api";
+import React, { useState, useEffect, useRef, useCallback } from "react";
+import {
+  GoogleMap,
+  useJsApiLoader,
+  Marker,
+  Polyline,
+} from "@react-google-maps/api";
 
 const ErrorText = () => (
   <p className="App-error-text">Geolocation IS NOT available</p>
@@ -52,7 +57,14 @@ function Geolocation() {
   };
 
   if (!isAvailable) return <ErrorText />;
-  return <GoogleMapAPI position={position} markers={markers} setMarkers={setMarkers} path={path} />;
+  return (
+    <GoogleMapAPI
+      position={position}
+      markers={markers}
+      setMarkers={setMarkers}
+      path={path}
+    />
+  );
 }
 
 function GoogleMapAPI({
@@ -72,6 +84,7 @@ function GoogleMapAPI({
   });
 
   const mapRef = useRef<google.maps.Map | null>(null);
+  const [zoomLevel, setZoomLevel] = useState(18);
 
   // クリック時にマーカーを追加する関数
   const handleMapClick = (event: google.maps.MapMouseEvent) => {
@@ -81,9 +94,90 @@ function GoogleMapAPI({
         lat: latLng.lat(),
         lng: latLng.lng(),
       };
-      setMarkers((prevMarkers) => [...prevMarkers, newMarker]); // クリックした位置にマーカーを追加
+
+      // ラインから3m以内かどうかを確認
+      if (isCloseToLine(newMarker)) {
+        setMarkers((prevMarkers) => [...prevMarkers, newMarker]);
+      }
     }
   };
+
+  // ラインから3m以内の点を確認する関数
+  const isCloseToLine = (point: { lat: number; lng: number }) => {
+    const line = path.map(({ lat, lng }) => new google.maps.LatLng(lat, lng));
+    const radius = 3; // 3m
+
+    for (let i = 0; i < line.length - 1; i++) {
+      const segmentStart = line[i];
+      const segmentEnd = line[i + 1];
+
+      // セグメントとポイントの最短距離を計算
+      const pointToSegmentDistance =
+        google.maps.geometry.spherical.computeDistanceBetween(
+          new google.maps.LatLng(point.lat, point.lng),
+          google.maps.geometry.spherical.interpolate(
+            segmentStart,
+            segmentEnd,
+            0.5
+          )
+        );
+
+      if (pointToSegmentDistance <= radius) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
+  // ラインの始点と終点を丸で表示
+  const drawStartEndMarkers = useCallback(() => {
+    // ズームレベルに基づいてマーカーのサイズを決定する関数
+    const getMarkerSize = () => {
+      if (zoomLevel < 10) {
+        return 6; // ズームレベルが低ければマーカー小さく
+      } else if (zoomLevel < 15) {
+        return 8; // 中程度のズームでマーカーのサイズを少し大きく
+      } else {
+        return 10; // ズームレベルが高ければマーカー大きく
+      }
+    };
+
+    if (path.length > 0) {
+      const startPoint = path[0];
+      const endPoint = path[path.length - 1];
+
+      // 始点マーカー
+      new google.maps.Marker({
+        position: startPoint,
+        map: mapRef.current,
+        title: "Start",
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: getMarkerSize(), // ズームレベルに基づいてマーカーサイズを動的に変更
+          fillColor: "green",
+          fillOpacity: 1,
+          strokeWeight: 2,
+          strokeColor: "black",
+        },
+      });
+
+      // 終点マーカー
+      new google.maps.Marker({
+        position: endPoint,
+        map: mapRef.current,
+        title: "End",
+        icon: {
+          path: google.maps.SymbolPath.CIRCLE,
+          scale: getMarkerSize(), // ズームレベルに基づいてマーカーサイズを動的に変更
+          fillColor: "red",
+          fillOpacity: 1,
+          strokeWeight: 2,
+          strokeColor: "black",
+        },
+      });
+    }
+  }, [path, zoomLevel]);
 
   // 現在位置のラインを描画
   useEffect(() => {
@@ -96,8 +190,19 @@ function GoogleMapAPI({
         strokeWeight: 2, // ラインの太さ
       });
       polyline.setMap(mapRef.current); // 地図にラインを描画
+
+      // 始点と終点に丸を表示
+      drawStartEndMarkers();
     }
-  }, [isLoaded, path]); // pathが変更されるたびにラインを更新
+  }, [isLoaded, path, drawStartEndMarkers]); // pathが変更されるたびにラインを更新
+
+  // ズームレベルが変更されたときに更新する
+  const onZoomChanged = () => {
+    if (mapRef.current) {
+      const zoom = mapRef.current.getZoom();
+      setZoomLevel(zoom || 18);
+    }
+  };
 
   if (!isLoaded) return <div className="App">Google Maps APIのロード中...</div>;
 
@@ -117,6 +222,7 @@ function GoogleMapAPI({
       options={mapOptions}
       onLoad={(map) => {
         mapRef.current = map;
+        map.addListener("zoom_changed", onZoomChanged); // ズーム変更時にイベントリスナーを追加
       }}
       onClick={handleMapClick} // クリック時にマーカーを追加
     >
