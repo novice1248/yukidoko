@@ -5,6 +5,7 @@ import NotLogin from "./pages/NotLogin";
 import GoogleMapAPI from "./pages/GoogleMap";
 import { Login } from "./pages/Login"; // ログインページのコンポーネント
 import Auth from "./pages/Auth"; // 新規登録ページのコンポーネント
+import Logout from "./pages/Logout"; // ログアウトページのコンポーネント
 //import GoogleMap from "./pages/GoogleMap"; // Aboutページのコンポーネント
 import styles from './css/App.module.css';
 
@@ -45,6 +46,7 @@ function App() {
           <Route path="/login" element={<Login />} />
           <Route path="/auth" element={<Auth />} /> {/* 新規登録ルートを追加 */}
           <Route path="/NotLogin" element={<NotLogin />} />
+          <Route path="/Logout" element={<Logout />} />{/* ログアウトルートを追加 */}
           <Route path="/Search" element={<GoogleMapAPI />} />
 
         </Routes>
