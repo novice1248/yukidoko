@@ -7,6 +7,9 @@ import Auth from "./pages/Auth";
 import Logout from "./pages/Logout";
 import Logined from "./pages/Logined";
 import Snowfall from "./Snowfall";
+import ResetLogin from "./pages/ResetLogin";
+import Drop from "./pages/Drop";
+import MyPage from "./pages/Mypage";
 import { useEffect, useState } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import styles from './css/App.module.css';
@@ -55,7 +58,14 @@ function App() {
             {!isAuthenticated ? (
               <Link to="/Login">ログイン</Link>
             ) : (
+              <div>
+              <li>
               <Link to="/Logout">ログアウト</Link>
+              </li>
+              <li>
+              <Link to="/Mypage">マイページ</Link>
+              </li>
+              </div>
             )}
           </div>
 
@@ -78,6 +88,9 @@ function App() {
           <Route path="/NotLogin" element={<NotLogin />} />
           <Route path="/Logout" element={<Logout />} />
           <Route path="/Search" element={<GoogleMapAPI />} />
+          <Route path="/ResetLogin" element={<ResetLogin />} />
+          <Route path="/Drop" element={<Drop />} />
+          <Route path="/Mypage" element={<MyPage />} />
           <Route path="/Logined" element={<PrivateRoute element={<Logined />} />} />
         </Routes>
       </div>

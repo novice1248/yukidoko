@@ -108,6 +108,10 @@ export const Login: React.FC = () => {
         navigate("/Auth");
     };
 
+    const handlePasswordResetClick = () => {
+        navigate("/ResetLogin");
+    };
+
     return (
         <Container>
             <Grid container justifyContent="center" alignItems="center" sx={{ minHeight: "100vh" }}>
@@ -140,6 +144,9 @@ export const Login: React.FC = () => {
                             </Button>
                             <Button variant="contained" color="secondary" onClick={handleRegisterClick}>
                                 新規登録
+                            </Button>
+                            <Button variant="text" color="primary" onClick={handlePasswordResetClick}>
+                                パスワードを忘れた方はこちら
                             </Button>
                         </Box>
                         <Snackbar open={open} autoHideDuration={3000} onClose={handleClose}>

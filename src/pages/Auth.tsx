@@ -141,18 +141,30 @@ const Auth: React.FC = () => {
                 >
                   {isRegistering ? "既にアカウントをお持ちですか？ログイン" : "アカウントをお持ちではありませんか？登録"}
                 </Button>
+              {/* ログイン画面の時だけ表示 */}
+              {!isRegistering && (
+                <Button
+                  fullWidth
+                  variant="text"
+                  sx={{ mt: 2 }}
+                  onClick={() => navigate("/ResetLogin")} // パスワードリセットページに遷移
+                >
+                  パスワードを忘れた方はこちら
+                </Button>
+              )}
               </Box>
-            </Paper>
-          </Grid>
+          </Paper>
         </Grid>
-        <Snackbar open={open} autoHideDuration={6000} onClose={handleClose}>
-          <Alert onClose={handleClose} severity={alertSeverity} sx={{ width: '100%' }}>
-            {alertMessage}
-          </Alert>
-        </Snackbar>
-      </Container>
-    </Fragment>
+      </Grid>
+      <Snackbar open={open} autoHideDuration={6000} onClose={handleClose}>
+        <Alert onClose={handleClose} severity={alertSeverity} sx={{ width: '100%' }}>
+          {alertMessage}
+        </Alert>
+      </Snackbar>
+    </Container>
+    </Fragment >
   );
 };
 
 export default Auth;
+
