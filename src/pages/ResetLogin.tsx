@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { getAuth, sendPasswordResetEmail } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import { Container, TextField, Button, Typography, Alert, Box } from "@mui/material";
@@ -10,7 +10,7 @@ const ResetLogin = () => {
   const navigate = useNavigate();
   const auth = getAuth();
 
-  const handleResetPassword = async (e) => {
+  const handleResetPassword = async (e: { preventDefault: () => void; }) => {
     e.preventDefault();
     setMessage("");
     setError("");
@@ -18,7 +18,7 @@ const ResetLogin = () => {
     try {
       await sendPasswordResetEmail(auth, email);
       setMessage("パスワードリセットのメールを送信しました。");
-    } catch (error) {
+    } catch (error: any) {
       if (error.code === "auth/user-not-found") {
         setError("このメールアドレスは登録されていません。");
       } else if (error.code === "auth/invalid-email") {

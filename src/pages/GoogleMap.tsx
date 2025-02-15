@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   GoogleMap,
   useJsApiLoader,
@@ -262,7 +262,9 @@ function GoogleMapAPI() {
       mapContainerStyle={{ width: "100%", height: "500px" }}
       center={{ lat: position.latitude || 0, lng: position.longitude || 0 }}
       zoom={zoom}
-      onLoad={(map) => (mapRef.current = map)} // マップインスタンスを保持
+      onLoad={(map) => {
+        mapRef.current = map;
+      }} // マップインスタンスを保持
       onZoomChanged={handleZoomChanged}
       options={{
         mapId: mapId,
