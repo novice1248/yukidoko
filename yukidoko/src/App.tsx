@@ -1,4 +1,4 @@
-import { Routes, Route, Link, BrowserRouter } from "react-router-dom";
+import { Routes, Route, Link, BrowserRouter, Navigate } from "react-router-dom";
 import Home from "./pages/Home";
 import NotLogin from "./pages/NotLogin";
 import GoogleMapAPI from "./pages/GoogleMap";
@@ -10,6 +10,25 @@ import Snowfall from "./Snowfall";
 import { useEffect, useState } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import styles from './css/App.module.css';
+
+function PrivateRoute({ element }: { element: JSX.Element }) {
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const auth = getAuth();
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setIsAuthenticated(!!user);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  if (isAuthenticated === null) {
+    return <p>読み込み中...</p>; // 認証状態の取得中
+  }
+
+  return isAuthenticated ? element : <Navigate to="/Login" replace />;
+}
 
 function App() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -48,7 +67,6 @@ function App() {
               <li>
                 <Link to={isAuthenticated ? "/Logined" : "/NotLogin"}>共有する</Link>
               </li>
-
             </div>
           </ul>
         </nav>
@@ -60,7 +78,7 @@ function App() {
           <Route path="/NotLogin" element={<NotLogin />} />
           <Route path="/Logout" element={<Logout />} />
           <Route path="/Search" element={<GoogleMapAPI />} />
-          <Route path="/Logined" element={<Logined />} />
+          <Route path="/Logined" element={<PrivateRoute element={<Logined />} />} />
         </Routes>
       </div>
     </BrowserRouter>
