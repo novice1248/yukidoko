@@ -4,7 +4,6 @@ import Login from "./pages/Login";
 import NotLogin from "./pages/NotLogin";
 //Routes、Route、Link、BrowserRouterをインポートし、ルーティング
 import GoogleMapAPI from "./pages/GoogleMap";
-import Geolocation from "./pages/GeoLocation";
 //import GoogleMap from "./pages/GoogleMap"; // Aboutページのコンポーネント
 import styles from './css/App.module.css';
 
@@ -39,9 +38,6 @@ function App() {
             <li>
               <Link to="/googleMap">GoogleMap</Link>
             </li>
-            <li>
-              <Link to="/geolocation">Geolocation</Link>
-            </li>
           </ul>
         </nav>
 
@@ -51,7 +47,6 @@ function App() {
           <Route path="/Login" element={<Login />} />
           <Route path="/NotLogin" element={<NotLogin />} />
           <Route path="/googleMap" element={<GoogleMapAPI />} />
-          <Route path="/geolocation" element={<Geolocation />} />
         </Routes>
 
       </div>
