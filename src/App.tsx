@@ -10,7 +10,7 @@ import Snowfall from "./Snowfall";
 import ResetLogin from "./pages/ResetLogin";
 import Drop from "./pages/Drop";
 import MyPage from "./pages/Mypage";
-import { useEffect, useState } from "react";
+import { JSX, useEffect, useState } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import styles from './css/App.module.css';
 
