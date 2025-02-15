@@ -1,7 +1,7 @@
 import React, { useState } from "react";
-import { getAuth, sendPasswordResetEmail, fetchSignInMethodsForEmail } from "firebase/auth";
+import { getAuth, sendPasswordResetEmail } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
-import { Container, TextField, Button, Typography, Paper, Box, Alert } from "@mui/material";
+import { Container, TextField, Button, Typography, Alert, Box } from "@mui/material";
 
 const ResetLogin = () => {
   const [email, setEmail] = useState("");
@@ -10,21 +10,16 @@ const ResetLogin = () => {
   const navigate = useNavigate();
   const auth = getAuth();
 
-  const handleResetPassword = async (e: React.FormEvent) => {
+  const handleResetPassword = async (e) => {
     e.preventDefault();
     setMessage("");
     setError("");
 
     try {
-      const signInMethods = await fetchSignInMethodsForEmail(auth, email);
-      if (signInMethods.length === 0) {
-        throw new Error("auth/user-not-found");
-      }
-
       await sendPasswordResetEmail(auth, email);
       setMessage("パスワードリセットのメールを送信しました。");
-    } catch (error: any) {
-      if (error.message === "auth/user-not-found") {
+    } catch (error) {
+      if (error.code === "auth/user-not-found") {
         setError("このメールアドレスは登録されていません。");
       } else if (error.code === "auth/invalid-email") {
         setError("無効なメールアドレスです。");
@@ -35,36 +30,35 @@ const ResetLogin = () => {
   };
 
   return (
-    <Container maxWidth="sm">
-      <Paper elevation={3} sx={{ padding: 4, textAlign: "center", marginTop: 4 }}>
-        <Typography variant="h4" gutterBottom>
+    <Container maxWidth="xs">
+      <Box sx={{ mt: 5, textAlign: "center" }}>
+        <Typography variant="h5" gutterBottom>
           パスワード再設定
         </Typography>
         <form onSubmit={handleResetPassword}>
           <TextField
             fullWidth
-            type="email"
             label="登録しているメールアドレス"
             variant="outlined"
+            margin="normal"
+            type="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
-            sx={{ marginBottom: 2 }}
           />
-          <Button variant="contained" color="primary" type="submit" fullWidth>
+          <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }}>
             送信
           </Button>
         </form>
-        {message && <Alert severity="success" sx={{ marginTop: 2 }}>{message}</Alert>}
-        {error && <Alert severity="error" sx={{ marginTop: 2 }}>{error}</Alert>}
-        <Box mt={2}>
-          <Button variant="outlined" color="secondary" onClick={() => navigate("/login")} fullWidth>
-            ログインページに戻る
-          </Button>
-        </Box>
-      </Paper>
+        {message && <Alert severity="success" sx={{ mt: 2 }}>{message}</Alert>}
+        {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
+        <Button onClick={() => navigate("/login")} sx={{ mt: 2 }}>
+          ログインページに戻る
+        </Button>
+      </Box>
     </Container>
   );
 };
 
 export default ResetLogin;
+

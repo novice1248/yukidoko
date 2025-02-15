@@ -1,11 +1,11 @@
 import React, { Fragment, useState } from "react";
-import { auth } from "../firebase";
 import {
   createUserWithEmailAndPassword,
   GoogleAuthProvider,
   signInWithPopup,
   signOut,
-  signInWithEmailAndPassword // 追加
+  signInWithEmailAndPassword, // 追加
+  getAuth, // 追加
 } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
 import {
@@ -27,6 +27,7 @@ const Auth: React.FC = () => {
   const [alertMessage, setAlertMessage] = useState("");
   const [alertSeverity, setAlertSeverity] = useState<"success" | "error" | "info">("info");
   const [isRegistering, setIsRegistering] = useState(true); // 登録/ログイン切り替え
+  const auth = getAuth();
   const navigate = useNavigate();
 
   const handleAuthAction = async () => {
@@ -59,23 +60,18 @@ const Auth: React.FC = () => {
 
 
   const signInWithGoogle = async () => {
-    const provider = new GoogleAuthProvider();
-    try {
-      await signInWithPopup(auth, provider);
-      setAlertMessage("Google ログインに成功しました。");
-      setAlertSeverity("success");
-      setOpen(true);
-      navigate("/Logined");
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        setAlertMessage(error.message);
-      } else {
-        setAlertMessage("予期しないエラーが発生しました");
-      }
-      setAlertSeverity("error");
-      setOpen(true);
-      console.error(error);
-    }
+    const auth = getAuth();
+  const provider = new GoogleAuthProvider();
+
+  // 毎回アカウント選択画面を表示
+  provider.setCustomParameters({ prompt: 'select_account' });
+
+  try {
+    const result = await signInWithPopup(auth, provider);
+    console.log("ログイン成功: ", result.user);
+  } catch (error) {
+    console.error("ログインエラー: ", error);
+  }
     
   };
 
