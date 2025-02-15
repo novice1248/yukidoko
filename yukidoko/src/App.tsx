@@ -1,9 +1,10 @@
 import { Routes, Route, Link, BrowserRouter } from "react-router-dom";
 import Home from "./pages/Home";
-import Login from "./pages/Login";
 import NotLogin from "./pages/NotLogin";
 //Routes、Route、Link、BrowserRouterをインポートし、ルーティング
 import GoogleMapAPI from "./pages/GoogleMap";
+import { Login } from "./pages/Login"; // ログインページのコンポーネント
+import Auth from "./pages/Auth"; // 新規登録ページのコンポーネント
 //import GoogleMap from "./pages/GoogleMap"; // Aboutページのコンポーネント
 import styles from './css/App.module.css';
 
@@ -26,6 +27,7 @@ function App() {
 
           <ul>
 
+
             {/* 探す・共有する (横並び) */}
             <div className={styles.navActions}>
               <li>
@@ -40,10 +42,11 @@ function App() {
 
         <Routes>
           <Route path="/" element={<Home />} />
-
-          <Route path="/Login" element={<Login />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/auth" element={<Auth />} /> {/* 新規登録ルートを追加 */}
           <Route path="/NotLogin" element={<NotLogin />} />
           <Route path="/Search" element={<GoogleMapAPI />} />
+
         </Routes>
 
       </div>
