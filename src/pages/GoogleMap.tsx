@@ -3,6 +3,14 @@ import { GoogleMap, useJsApiLoader, Marker, Polyline, InfoWindow } from "@react-
 import { db } from "../firebase";
 import { collection, addDoc, getDocs } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import React, { useRef } from "react";
+import {
+  GoogleMap,
+  useJsApiLoader,
+  Marker,
+  Polyline,
+  InfoWindow,
+} from "@react-google-maps/api";
 
 const libraries: ("places" | "geometry" | "drawing")[] = ["places", "geometry"];
 
@@ -17,6 +25,7 @@ interface MarkerData {
   title: string;
   levelId: string;
   isEditable: boolean;
+  isPlaced: boolean;
   timestamp: string;
 }
 
@@ -32,6 +41,26 @@ function GoogleMapAPI() {
   const [markers, setMarkers] = useState<MarkerData[]>([]);
   const [path, setPath] = useState<google.maps.LatLngLiteral[]>([]);
   const [selectedMarker, setSelectedMarker] = useState<MarkerData | null>(null);
+
+  const [errorMessage, setErrorMessage] = useState<string>("");
+  const [zoom, setZoom] = useState(18); // ズームレベルを管理
+
+  const mapRef = useRef<google.maps.Map | null>(null); // マップのインスタンスを保存
+  
+  const handleZoomChanged = () => {
+    if (mapRef.current) {
+      setZoom(mapRef.current.getZoom() || 18);
+    }
+  };
+
+  const [levels] = useState<LevelData[]>([
+    { id: "Level1", label: "Low", color: "green" },
+    { id: "Level2", label: "Medium", color: "yellow" },
+    { id: "Level3", label: "High", color: "orange" },
+    { id: "Level4", label: "Very High", color: "red" },
+    { id: "Level5", label: "Extreme", color: "darkred" },
+    { id: "Level100", label: "地球崩壊", color: "black" },
+  ]);
 
   useEffect(() => {
     if ("geolocation" in navigator) {
@@ -64,6 +93,7 @@ function GoogleMapAPI() {
   };
 
   const handleMapClick = (event: google.maps.MapMouseEvent) => {
+
     if (!event.latLng) return;
 
     const newMarker: MarkerData = {
@@ -79,6 +109,79 @@ function GoogleMapAPI() {
 
     // Firestore に保存
     savePinToFirestore(newMarker);
+
+    if (event.latLng) {
+      if (selectedMarker && !selectedMarker.isPlaced) {
+        handleRemoveMarker(selectedMarker);
+      }
+
+      const newMarkerPosition = event.latLng;
+      const distancePolyLine = 30;
+      const distanceMarker = 10;
+      let isWithinPolyLine = false;
+      let isWithinMarker = false;
+
+      // ポリライン上の各点との距離を計算して、5m以内かどうかをチェック
+      for (let i = 0; i < path.length; i++) {
+        const distanceBetweenPolyLine =
+          google.maps.geometry.spherical.computeDistanceBetween(
+            newMarkerPosition,
+            new google.maps.LatLng(path[i].lat, path[i].lng)
+          );
+
+        if (distanceBetweenPolyLine <= distancePolyLine) {
+          isWithinPolyLine = true;
+          break;
+        }
+      }
+
+      // 既存のマーカーと距離をチェック
+      for (let i = 0; i < markers.length; i++) {
+        const existingMarker = markers[i];
+        const distanceBetweenMarker =
+          google.maps.geometry.spherical.computeDistanceBetween(
+            newMarkerPosition,
+            new google.maps.LatLng(existingMarker.lat, existingMarker.lng)
+          );
+
+        if (distanceBetweenMarker <= distanceMarker) {
+          isWithinMarker = true;
+          break;
+        }
+      }
+
+      // distancePolyLine以内でdistanceMarkerの外の場合
+      if (isWithinPolyLine == true && isWithinMarker == false) {
+        const newMarker: MarkerData = {
+          lat: newMarkerPosition.lat(),
+          lng: newMarkerPosition.lng(),
+          title: "サンプル",
+          levelId: "Level1",
+          isEditable: true,
+          isPlaced: false,
+          timestamp: new Date().toISOString(),
+        };
+        console.log("新しいマーカーの情報:", newMarker); // デバッグ用
+        setMarkers((prevMarkers) => [...prevMarkers, newMarker]);
+        setSelectedMarker(newMarker); // 最初に設置されたマーカーを選択
+        setErrorMessage(""); // エラーメッセージをリセット
+      } else if (isWithinPolyLine == false) {
+        setErrorMessage(
+          "マーカーはポリラインの" +
+            distancePolyLine +
+            "m以内にのみ追加できます"
+        );
+      } else if (isWithinMarker == true) {
+        setErrorMessage(
+          "マーカーは既存のマーカーから" +
+            distanceMarker +
+            "m以内には設置できません"
+        );
+      } else {
+        setErrorMessage("あり得ない挙動です");
+      }
+    }
+
   };
 
   const savePinToFirestore = async (marker: MarkerData) => {
@@ -102,6 +205,25 @@ function GoogleMapAPI() {
       console.log("ピンを Firestore に保存しました");
     } catch (error) {
       console.error("ピンの保存に失敗しました", error);
+
+  const handleSaveMarker = (levelId: string) => {
+    if (selectedMarker && selectedMarker.isEditable) {
+      console.log("保存ボタンがクリックされました");
+      const updatedMarker = {
+        ...selectedMarker,
+        levelId,
+        isEditable: false,
+        isPlaced: true,
+        timestamp: selectedMarker.timestamp,
+      };
+      setMarkers((prevMarkers) =>
+        prevMarkers.map((marker) =>
+          marker === selectedMarker ? updatedMarker : marker
+        )
+      );
+      setSelectedMarker(updatedMarker);
+      console.log("更新されたマーカー:", updatedMarker);
+
     }
   };
 
@@ -130,9 +252,17 @@ function GoogleMapAPI() {
 
       console.log("Firestore から取得したピン (マーカー配列):", loadedMarkers);
 
+
       setMarkers(loadedMarkers);
     } catch (error) {
       console.error("Firestore からピンの取得に失敗:", error);
+
+  const handleInfoWindowClose = () => {
+    if (selectedMarker && selectedMarker.isPlaced == false) {
+      handleRemoveMarker(selectedMarker); // InfoWindowが閉じられたときにマーカーを削除
+    } else if (selectedMarker) {
+      setSelectedMarker(null);
+
     }
   };
 
@@ -143,11 +273,14 @@ function GoogleMapAPI() {
     <GoogleMap
       mapContainerStyle={{ width: "100%", height: "500px" }}
       center={{ lat: position.latitude || 0, lng: position.longitude || 0 }}
-      zoom={18}
+      zoom={zoom}
+      onLoad={handleZoomChanged} // マップのロード時に `handleLoad` を実行
+      onZoomChanged={handleZoomChanged} // ズームレベルを変更する
       options={{
         mapId: mapId,
         disableDefaultUI: false,
         clickableIcons: false,
+
       }}
       onClick={handleMapClick}
     >
@@ -156,9 +289,54 @@ function GoogleMapAPI() {
           key={marker.timestamp} // ドキュメント ID など一意な値を key に使用
           position={{ lat: marker.lat, lng: marker.lng }}
           title={marker.title}
+
+        streetViewControl: false, // これを追加して、ストリートビューのアイコンを非表示
+        mapTypeControl: false, // 地図のタイプ（衛星表示など）のコントロールを非表示
+        styles: [
+          {
+            featureType: "all",
+            elementType: "labels",
+            stylers: [{ visibility: "off" }], // ここでラベルを非表示にする
+          },
+        ],
+      }}
+      onClick={handleMapClick}
+    >
+  {markers.map((marker, index) => (
+  <Marker
+  key={index}
+  position={{ lat: marker.lat, lng: marker.lng }}
+  icon={{
+    path: google.maps.SymbolPath.CIRCLE, // 丸いアイコン
+    fillColor:
+      levels.find((level) => level.id === marker.levelId)?.color || "gray", // レベルに応じた色
+    fillOpacity: 1, // 完全に不透明
+    scale: Math.max(8, zoom / 2), // ズームに応じたサイズ変更
+    strokeColor: "white", // アイコンの枠線色
+    strokeWeight: 2, // アイコンの枠線の太さ
+  }}
+
           onClick={() => setSelectedMarker(marker)}
-        />
-      ))}
+/>
+
+))}
+
+
+
+      {/* エラーメッセージを表示 */}
+      {errorMessage && (
+        <InfoWindow
+          position={{
+            lat: position.latitude || 0,
+            lng: position.longitude || 0,
+          }}
+        >
+          <div style={{ color: "red" }}>
+            <h3>{errorMessage}</h3>
+          </div>
+        </InfoWindow>
+      )}
+
 
       {selectedMarker && (
         <InfoWindow
@@ -177,4 +355,6 @@ function GoogleMapAPI() {
   );
 }
 
+
 export default GoogleMapAPI;
+

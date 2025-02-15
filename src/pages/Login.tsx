@@ -36,7 +36,6 @@ const firebaseConfig = {
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 
 const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
 
 export const Login: React.FC = () => {
     const [user, setUser] = useState<User | null>(null);
@@ -62,17 +61,17 @@ export const Login: React.FC = () => {
     }, [navigate]);
 
     const signIn = async () => {
+        const auth = getAuth();
+        const provider = new GoogleAuthProvider();
+
+        // 毎回アカウント選択画面を表示
+        provider.setCustomParameters({ prompt: 'select_account' });
+
         try {
             const result = await signInWithPopup(auth, provider);
-            console.log("Google ログイン成功:", result.user); // 成功時のユーザー情報を確認
-            setAlertMessage("Google ログインに成功しました。"); // 成功メッセージ
-            setAlertSeverity("success");
-            setOpen(true);
-        } catch (error: any) {
-            console.error("Google ログインエラー:", error.code, error.message);
-            setAlertMessage(error.message); // エラーメッセージを表示
-            setAlertSeverity("error");
-            setOpen(true);
+            console.log("ログイン成功: ", result.user);
+        } catch (error) {
+            console.error("ログインエラー: ", error);
         }
     };
 
