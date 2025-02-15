@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { getAuth, deleteUser, onAuthStateChanged, User } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
+import { Button, Typography, Container, Box, Alert } from "@mui/material";
 
 const Drop = () => {
   const auth = getAuth();
   const navigate = useNavigate();
   const [user, setUser] = useState<User | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -26,21 +28,35 @@ const Drop = () => {
         alert("アカウントが削除されました。");
         navigate("/"); // 削除後、ホームへリダイレクト
       } catch (error) {
-        alert("エラーが発生しました。再度お試しください。");
+        setError("エラーが発生しました。再度お試しください。");
       }
     }
   };
 
   if (!user) {
-    return <p>認証情報を確認しています...</p>;
+    return <Typography variant="h6" color="textSecondary">認証情報を確認しています...</Typography>;
   }
 
   return (
-    <div>
-      <h1>アカウント削除</h1>
-      <p>アカウントを削除する場合は、下のボタンを押してください。</p>
-      <button onClick={handleAccountDeletion}>アカウント削除</button>
-    </div>
+    <Container maxWidth="sm">
+      <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: "100vh", padding: 2 }}>
+        <Typography variant="h4" sx={{ marginBottom: 2 }}>アカウント削除</Typography>
+        <Typography variant="body1" sx={{ marginBottom: 3 }}>
+          アカウントを削除する場合は、下のボタンを押してください。
+        </Typography>
+        
+        {error && <Alert severity="error" sx={{ marginBottom: 2 }}>{error}</Alert>}
+
+        <Button 
+          variant="contained" 
+          color="error" 
+          onClick={handleAccountDeletion}
+          sx={{ padding: "10px 20px", fontSize: "1rem" }}
+        >
+          アカウント削除
+        </Button>
+      </Box>
+    </Container>
   );
 };
 
