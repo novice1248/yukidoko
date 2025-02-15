@@ -161,6 +161,52 @@ function GoogleMapAPI() {
       } else {
         setErrorMessage("あり得ない挙動です");
       }
+
+      // 12時間経過しているマーカーを探し、設置できる場所を決める
+      const markersToCheck = markers.filter((marker) => {
+        const markerTimestamp = new Date(marker.timestamp);
+        const currentTime = new Date();
+        const timeDiff = currentTime.getTime() - markerTimestamp.getTime();
+        return timeDiff >= 12 * 60 * 60 * 1000; // 12時間以上経過したマーカー
+      });
+
+      // 12時間経過したマーカーがある場合、周囲に新しいマーカーを設置できるか確認
+      if (markersToCheck.length > 0) {
+        let closestMarker = markersToCheck[0];
+        let closestDistance = google.maps.geometry.spherical.computeDistanceBetween(
+          newMarkerPosition,
+          new google.maps.LatLng(closestMarker.lat, closestMarker.lng)
+        );
+
+        markersToCheck.forEach((marker) => {
+          const distance = google.maps.geometry.spherical.computeDistanceBetween(
+            newMarkerPosition,
+            new google.maps.LatLng(marker.lat, marker.lng)
+          );
+          if (distance < closestDistance) {
+            closestDistance = distance;
+            closestMarker = marker;
+          }
+        });
+
+        // 最も近いマーカーを削除
+        handleRemoveMarker(closestMarker);
+
+        // 新しいマーカーを設置
+        const newMarker: MarkerData = {
+          lat: newMarkerPosition.lat(),
+          lng: newMarkerPosition.lng(),
+          title: "新しいマーカー",
+          levelId: "Level1",
+          isEditable: true,
+          isPlaced: false,
+          timestamp: new Date().toISOString(),
+        };
+
+        setMarkers((prevMarkers) => [...prevMarkers, newMarker]);
+        setSelectedMarker(newMarker);
+        setErrorMessage(""); // エラーメッセージをリセット
+      }
     }
   };
 
