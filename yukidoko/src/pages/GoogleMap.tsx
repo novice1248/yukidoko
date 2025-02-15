@@ -1,53 +1,76 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import {
   GoogleMap,
   useJsApiLoader,
   Marker,
   Polyline,
+  InfoWindow,
 } from "@react-google-maps/api";
 
-const ErrorText = () => (
-  <p className="App-error-text">Geolocation IS NOT available</p>
-);
+const libraries: ("places" | "geometry" | "drawing" | "marker")[] = ["marker"];
 
 interface Position {
   latitude: number | null;
   longitude: number | null;
 }
 
-const libraries: ("places" | "geometry" | "drawing" | "marker")[] = ["marker"];
+interface LevelData {
+  id: string;
+  label: string;
+  color: string;
+}
+
+interface MarkerData {
+  lat: number;
+  lng: number;
+  title: string;
+  levelId: string;
+  isEditable: boolean;
+  timestamp: string;
+}
 
 function Geolocation() {
+  const { isLoaded } = useJsApiLoader({
+    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAP_API_KEY || "",
+    libraries,
+  });
+
+  const mapId = import.meta.env.VITE_GOOGLE_MAP_ID || "";
   const [isAvailable, setAvailable] = useState(false);
   const [position, setPosition] = useState<Position>({
     latitude: null,
     longitude: null,
   });
-  const [markers, setMarkers] = useState<google.maps.LatLngLiteral[]>([]); // マーカーを保持する型を修正
-  const [path, setPath] = useState<google.maps.LatLngLiteral[]>([]); // ラインの座標を保持
+  const [markers, setMarkers] = useState<MarkerData[]>([]);
+  const [path, setPath] = useState<google.maps.LatLngLiteral[]>([]);
+  const [selectedMarker, setSelectedMarker] = useState<MarkerData | null>(null);
+
+  const [levels] = useState<LevelData[]>([
+    { id: "Level1", label: "Low", color: "green" },
+    { id: "Level2", label: "Medium", color: "yellow" },
+    { id: "Level3", label: "High", color: "orange" },
+    { id: "Level4", label: "Very High", color: "red" },
+    { id: "Level5", label: "Extreme", color: "darkred" },
+    { id: "Level100", label: "地球崩壊", color: "black" },
+  ]);
 
   useEffect(() => {
     if ("geolocation" in navigator) {
       setAvailable(true);
       getCurrentPosition();
+      const interval = setInterval(getCurrentPosition, 5000);
+      return () => clearInterval(interval);
     } else {
       setAvailable(false);
     }
-
-    const interval = setInterval(getCurrentPosition, 5000);
-    return () => clearInterval(interval);
   }, []);
 
   const getCurrentPosition = () => {
     navigator.geolocation.getCurrentPosition(
       (position) => {
         const { latitude, longitude } = position.coords;
-        const newPosition = { lat: latitude, lng: longitude };
-
         setPosition({ latitude, longitude });
-
-        // ラインを描くためにpathに追加
-        setPath((prevPath) => [...prevPath, newPosition]);
+        setPath((prevPath) => [...prevPath, { lat: latitude, lng: longitude }]);
       },
       (error) => {
         console.error("位置情報の取得に失敗しました", error);
@@ -56,193 +79,135 @@ function Geolocation() {
     );
   };
 
-  if (!isAvailable) return <ErrorText />;
-  return (
-    <GoogleMapAPI
-      position={position}
-      markers={markers}
-      setMarkers={setMarkers}
-      path={path}
-    />
-  );
-}
-
-function GoogleMapAPI({
-  position,
-  markers,
-  setMarkers,
-  path,
-}: {
-  position: Position;
-  markers: google.maps.LatLngLiteral[];
-  setMarkers: React.Dispatch<React.SetStateAction<google.maps.LatLngLiteral[]>>;
-  path: google.maps.LatLngLiteral[];
-}) {
-  const { isLoaded } = useJsApiLoader({
-    googleMapsApiKey: import.meta.env.VITE_GOOGLE_MAP_API_KEY || "",
-    libraries: libraries,
-  });
-
-  const mapRef = useRef<google.maps.Map | null>(null);
-  const [zoomLevel, setZoomLevel] = useState(18);
-
-  // クリック時にマーカーを追加する関数
   const handleMapClick = (event: google.maps.MapMouseEvent) => {
-    const { latLng } = event;
-    if (latLng) {
-      const newMarker = {
-        lat: latLng.lat(),
-        lng: latLng.lng(),
+    if (event.latLng) {
+      const newMarker: MarkerData = {
+        lat: event.latLng.lat(),
+        lng: event.latLng.lng(),
+        title: "サンプル",
+        levelId: "Level1",
+        isEditable: true, // 新しく追加: 設置したマーカーは編集できない
+        timestamp: new Date().toISOString(),
       };
-
-      // ラインから3m以内かどうかを確認
-      if (isCloseToLine(newMarker)) {
-        setMarkers((prevMarkers) => [...prevMarkers, newMarker]);
-      }
+      console.log("新しいマーカーの情報:", newMarker); // デバッグ用
+      setMarkers((prevMarkers) => [...prevMarkers, newMarker]);
+      setSelectedMarker(newMarker); // 最初に設置されたマーカーを選択
     }
   };
 
-  // ラインから3m以内の点を確認する関数
-  const isCloseToLine = (point: { lat: number; lng: number }) => {
-    const line = path.map(({ lat, lng }) => new google.maps.LatLng(lat, lng));
-    const radius = 3; // 3m
-
-    for (let i = 0; i < line.length - 1; i++) {
-      const segmentStart = line[i];
-      const segmentEnd = line[i + 1];
-
-      // セグメントとポイントの最短距離を計算
-      const pointToSegmentDistance =
-        google.maps.geometry.spherical.computeDistanceBetween(
-          new google.maps.LatLng(point.lat, point.lng),
-          google.maps.geometry.spherical.interpolate(
-            segmentStart,
-            segmentEnd,
-            0.5
-          )
-        );
-
-      if (pointToSegmentDistance <= radius) {
-        return true;
-      }
-    }
-
-    return false;
-  };
-
-  // ラインの始点と終点を丸で表示
-  const drawStartEndMarkers = useCallback(() => {
-    // ズームレベルに基づいてマーカーのサイズを決定する関数
-    const getMarkerSize = () => {
-      if (zoomLevel < 10) {
-        return 6; // ズームレベルが低ければマーカー小さく
-      } else if (zoomLevel < 15) {
-        return 8; // 中程度のズームでマーカーのサイズを少し大きく
-      } else {
-        return 10; // ズームレベルが高ければマーカー大きく
-      }
-    };
-
-    if (path.length > 0) {
-      const startPoint = path[0];
-      const endPoint = path[path.length - 1];
-
-      // 始点マーカー
-      new google.maps.Marker({
-        position: startPoint,
-        map: mapRef.current,
-        title: "Start",
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: getMarkerSize(), // ズームレベルに基づいてマーカーサイズを動的に変更
-          fillColor: "green",
-          fillOpacity: 1,
-          strokeWeight: 2,
-          strokeColor: "black",
-        },
-      });
-
-      // 終点マーカー
-      new google.maps.Marker({
-        position: endPoint,
-        map: mapRef.current,
-        title: "End",
-        icon: {
-          path: google.maps.SymbolPath.CIRCLE,
-          scale: getMarkerSize(), // ズームレベルに基づいてマーカーサイズを動的に変更
-          fillColor: "red",
-          fillOpacity: 1,
-          strokeWeight: 2,
-          strokeColor: "black",
-        },
-      });
-    }
-  }, [path, zoomLevel]);
-
-  // 現在位置のラインを描画
-  useEffect(() => {
-    if (isLoaded && mapRef.current) {
-      const polyline = new google.maps.Polyline({
-        path: path, // pathに基づいてラインを描画
-        geodesic: true, // 地球の曲率を考慮して描画
-        strokeColor: "#FF0000", // ラインの色
-        strokeOpacity: 1.0, // ラインの透明度
-        strokeWeight: 2, // ラインの太さ
-      });
-      polyline.setMap(mapRef.current); // 地図にラインを描画
-
-      // 始点と終点に丸を表示
-      drawStartEndMarkers();
-    }
-  }, [isLoaded, path, drawStartEndMarkers]); // pathが変更されるたびにラインを更新
-
-  // ズームレベルが変更されたときに更新する
-  const onZoomChanged = () => {
-    if (mapRef.current) {
-      const zoom = mapRef.current.getZoom();
-      setZoomLevel(zoom || 18);
+  const handleSaveMarker = (levelId: string) => {
+    if (selectedMarker && selectedMarker.isEditable) {
+      console.log("保存ボタンがクリックされました");
+      const updatedMarker = {
+        ...selectedMarker,
+        levelId,
+        isEditable: false,
+        timestamp: selectedMarker.timestamp,
+      };
+      setMarkers((prevMarkers) =>
+        prevMarkers.map((marker) =>
+          marker === selectedMarker ? updatedMarker : marker
+        )
+      );
+      setSelectedMarker(updatedMarker);
+      console.log("更新されたマーカー:", updatedMarker);
     }
   };
 
-  if (!isLoaded) return <div className="App">Google Maps APIのロード中...</div>;
-
-  const mapOptions = {
-    mapId: "dc2b461c6c6edfa6", // ここに Map ID を指定
-    // その他のオプション
+  const handleLevelChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    if (selectedMarker && selectedMarker.isEditable) {
+      const updatedMarker = { ...selectedMarker, levelId: event.target.value };
+      setMarkers((prevMarkers) =>
+        prevMarkers.map((marker) =>
+          marker === selectedMarker ? updatedMarker : marker
+        )
+      );
+      setSelectedMarker(updatedMarker);
+    }
   };
+
+  if (!isAvailable)
+    return <p className="App-error-text">Geolocation IS NOT available</p>;
+  if (!isLoaded) return <div>Google Maps APIのロード中...</div>;
 
   return (
     <GoogleMap
       mapContainerStyle={{ width: "400px", height: "400px" }}
-      center={{
-        lat: position.latitude || 0,
-        lng: position.longitude || 0,
-      }}
+      center={{ lat: position.latitude || 0, lng: position.longitude || 0 }}
       zoom={18}
-      options={mapOptions}
-      onLoad={(map) => {
-        mapRef.current = map;
-        map.addListener("zoom_changed", onZoomChanged); // ズーム変更時にイベントリスナーを追加
+      options={{
+        mapId: mapId,
+        disableDefaultUI: false,
+        clickableIcons: false,
+        styles: [
+          {
+            featureType: "all",
+            elementType: "labels",
+            stylers: [{ visibility: "off" }], // ここでラベルを非表示にする
+          },
+        ],
       }}
-      onClick={handleMapClick} // クリック時にマーカーを追加
+      onClick={handleMapClick}
     >
-      {/* markers 配列からマーカーを描画 */}
       {markers.map((marker, index) => (
         <Marker
           key={index}
-          position={marker} // マーカーの位置を設定
+          position={{ lat: marker.lat, lng: marker.lng }}
+          icon={{
+            path: google.maps.SymbolPath.CIRCLE,
+            fillColor:
+              levels.find((level) => level.id === marker.levelId)?.color ||
+              "gray",
+            fillOpacity: 1,
+            scale: 10,
+            strokeColor: "white",
+            strokeWeight: 2,
+          }}
+          onClick={() => setSelectedMarker(marker)}
         />
       ))}
-      {/* 現在位置に基づくラインを描画 */}
-      <Polyline
-        path={path}
-        options={{
-          geodesic: true,
-          strokeColor: "#FF0000",
-          strokeOpacity: 1.0,
-          strokeWeight: 2,
-        }}
-      />
+
+      {selectedMarker && (
+        <InfoWindow
+          position={{ lat: selectedMarker.lat, lng: selectedMarker.lng }}
+          onCloseClick={() => setSelectedMarker(null)}
+        >
+          <div>
+            <h3>{selectedMarker.title}</h3>
+            <p>日時: {new Date(selectedMarker.timestamp).toLocaleString()}</p>
+            {selectedMarker.isEditable ? (
+              <>
+                <select
+                  value={selectedMarker.levelId}
+                  onChange={handleLevelChange}
+                >
+                  {levels.map((level) => (
+                    <option key={level.id} value={level.id}>
+                      {level.label}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => handleSaveMarker(selectedMarker.levelId)}
+                >
+                  保存
+                </button>
+              </>
+            ) : (
+              <>
+                <p>
+                  レベル:{" "}
+                  {
+                    levels.find((level) => level.id === selectedMarker.levelId)
+                      ?.label
+                  }
+                </p>
+              </>
+            )}
+          </div>
+        </InfoWindow>
+      )}
+      <Polyline path={path} options={{ strokeColor: "#FF0000" }} />
     </GoogleMap>
   );
 }
