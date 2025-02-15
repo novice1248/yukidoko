@@ -1,7 +1,36 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { getAuth, signOut, onAuthStateChanged, User } from "firebase/auth";
 
 const MyPage = () => {
-  const [user, setUser] = useState(null);
+    const navigate = useNavigate();
+        const auth = getAuth();
+        const [user, setUser] = useState<User | null>(null);
+      
+        useEffect(() => {
+          const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+            if (!currentUser) {
+              navigate("/Login"); // 未ログインならログインページへリダイレクト
+            } else {
+              setUser(currentUser);
+            }
+          });
+      
+          return () => unsubscribe();
+        }, [navigate]);
+      
+        const handleLogout = async () => {
+          try {
+            await signOut(auth);
+            navigate("/"); // ログアウト後にホームへリダイレクト
+          } catch (error) {
+            console.error("ログアウトエラー:", error);
+          }
+        };
+      
+        if (!user) {
+          return <p>認証情報を確認しています...</p>; // ログイン状態確認中の表示
+        }
 
   useEffect(() => {
     // サーバーからユーザー情報を取得

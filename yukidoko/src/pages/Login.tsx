@@ -94,20 +94,6 @@ export const Login: React.FC = () => {
     };
 
 
-
-
-
-    /*
-        const signIn = async () => {
-            try {
-                await signInWithRedirect(auth, provider);
-            } catch (error: any) {
-                console.error("Google ログインエラー:", error.code, error.message);
-            }
-        };
-    */
-
-
     const signInWithEmail = async () => {
         try {
             await signInWithEmailAndPassword(auth, email, password);
