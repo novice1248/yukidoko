@@ -10,11 +10,15 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "predeploy": "npm run build",
-  "deploy": "gh-pages -d dist"
+    "deploy": "gh-pages -d dist"
   },
   "dependencies": {
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.0",
     "@googlemaps/react-wrapper": "^1.1.42",
+    "@mui/material": "^6.4.4",
     "@react-google-maps/api": "^2.20.6",
+    "firebase": "^11.3.1",
     "gh-pages": "^6.3.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
