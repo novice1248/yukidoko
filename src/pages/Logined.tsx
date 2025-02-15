@@ -1,6 +1,6 @@
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getAuth, signOut, onAuthStateChanged, User } from "firebase/auth";
+import { getAuth, onAuthStateChanged, User } from "firebase/auth";
 
 function Logined() {
   const navigate = useNavigate();
@@ -18,15 +18,6 @@ function Logined() {
 
     return () => unsubscribe();
   }, [navigate]);
-
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      navigate("/"); // ログアウト後にホームへリダイレクト
-    } catch (error) {
-      console.error("ログアウトエラー:", error);
-    }
-  };
 
   if (!user) {
     return <p>認証情報を確認しています...</p>; // ログイン状態確認中の表示

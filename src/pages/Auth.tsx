@@ -25,7 +25,7 @@ const Auth: React.FC = () => {
   const [password, setPassword] = useState<string>("");
   const [open, setOpen] = useState(false);
   const [alertMessage, setAlertMessage] = useState("");
-  const [alertSeverity, setAlertSeverity] = useState<"success" | "error">("info");
+  const [alertSeverity, setAlertSeverity] = useState<"success" | "error" | "info">("info");
   const [isRegistering, setIsRegistering] = useState(true); // 登録/ログイン切り替え
   const navigate = useNavigate();
 
@@ -45,8 +45,12 @@ const Auth: React.FC = () => {
         setOpen(true);
         navigate("/Logined"); // ログイン成功後に遷移
       }
-    } catch (error) {
-      setAlertMessage(error.message);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setAlertMessage(error.message);
+      } else {
+        setAlertMessage("予期しないエラーが発生しました");
+      }
       setAlertSeverity("error");
       setOpen(true);
       console.error(error);
@@ -62,12 +66,17 @@ const Auth: React.FC = () => {
       setAlertSeverity("success");
       setOpen(true);
       navigate("/Logined");
-    } catch (error) {
-      setAlertMessage(error.message);
+    } catch (error: unknown) {
+      if (error instanceof Error) {
+        setAlertMessage(error.message);
+      } else {
+        setAlertMessage("予期しないエラーが発生しました");
+      }
       setAlertSeverity("error");
       setOpen(true);
       console.error(error);
     }
+    
   };
 
   const handleChangeEmail = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -78,7 +87,7 @@ const Auth: React.FC = () => {
     setPassword(event.currentTarget.value);
   };
 
-  const handleClose = (event?: React.SyntheticEvent | Event, reason?: string) => {
+  const handleClose = (_event?: React.SyntheticEvent | Event, reason?: string) => {
     if (reason === 'clickaway') {
       return;
     }

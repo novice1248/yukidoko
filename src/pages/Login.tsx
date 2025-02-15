@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate, Routes, Route } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { initializeApp, getApps } from "firebase/app";
 import {
     GoogleAuthProvider,
@@ -45,7 +45,7 @@ export const Login: React.FC = () => {
     const navigate = useNavigate();
     const [open, setOpen] = useState(false);
     const [alertMessage, setAlertMessage] = useState("");
-    const [alertSeverity, setAlertSeverity] = useState<"success" | "error">("info");
+    const [alertSeverity, setAlertSeverity] = useState<"success" | "error" | "info">("info");
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
