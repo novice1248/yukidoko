@@ -1,3 +1,154 @@
+body {
+  background-color: #B0C4DE; /* もう少し暗いパステルブルー */
+}
+
 .title {
-  color: blue;
+
+  color: transparent;
+  -webkit-text-stroke: 2px #454545;
+  text-shadow: 3px 3px #81bedb;
+  cursor: pointer; /* クリック可能であることを示す */
+  transition: transform 0.3s ease, text-shadow 0.3s ease;
+  font-size: 2rem;
+}
+
+.title:hover {
+  transform: scale(1.1); /* 少し拡大 */
+  text-shadow: 5px 5px #81bedb; /* 影を強調 */
+}
+
+
+/* 全体のリセット */
+nav {
+  position: relative;
+  width: 100%;
+}
+
+/* リストのスタイルリセット */
+nav ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* ホームボタンを中央に配置 */
+  position: relative;
+}
+
+/* ログイン・新規登録エリア */
+.navAuth {
+  position: relative;
+  top: 0px;
+  right: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  z-index: 10;
+}
+
+
+/* 探す・共有するエリア */
+.navActions {
+  display: flex;
+  gap: 50px; /* ボタン間のスペース */
+}
+
+/* ボタン共通スタイル */
+nav a {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: #007bff; /* ボタン色 */
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+  transition: background 0.3s, transform 0.2s;
+  font-weight: bold;
+  text-align: center;
+}
+
+nav a:hover {
+  background-color: #0056b3;
+  transform: scale(1.05);
+}
+
+/* ログイン・新規登録のデザイン変更 */
+.navAuth a {
+  background-color: #0056b3;
+}
+
+.navAuth a:hover {
+  background-color: #010101;
+  transform: scale(1.05);
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 600px) {
+  .navAuth {
+    top: 5px;
+    right: 10px;
+  }
+
+  .navActions {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+}
+
+.navActions li:nth-child(1) a {
+  background-color: #AEEEEE; /* パステルブルー */
+  color: #004466;
+  border-radius: 50px;
+}
+
+.navActions li:nth-child(1) a:hover {
+  background-color: #90D7EC;
+}
+
+/* 共有するボタン */
+.navActions li:nth-child(2) a {
+  background-color: #FFB6C1; /* パステルピンク */
+  color: #800040;
+  border-radius: 50px;
+}
+
+.navActions li:nth-child(2) a:hover {
+  background-color: #FFA0B2;
+}
+
+/*「探す」「共有する」ボタンのみ大きくする*/
+.navActions li a {
+  padding: 15px 30px; /* ボタンを大きくする */
+  font-size: 1.2rem; /* 文字サイズを大きく */
+}
+
+
+@keyframes snowfall {
+  from {
+    transform: translateY(-10vh);
+    opacity: 1;
+  }
+  to {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+}
+
+.snowflake {
+  position: absolute;
+  top: -10px;
+  background-color: white;
+  border-radius: 50%;
+  opacity: 0.8;
+  animation: snowfall linear infinite;
+}
+
+.snowContainer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: -1;
 }

@@ -1,48 +1,58 @@
 import { Routes, Route, Link, BrowserRouter } from "react-router-dom";
+import Home from "./pages/Home";
+import NotLogin from "./pages/NotLogin";
 //Routes、Route、Link、BrowserRouterをインポートし、ルーティング
-import Home from "./pages/Home"; // ホームページのコンポーネント
 import GoogleMapAPI from "./pages/GoogleMap";
-import Geolocation from "./pages/GeoLocation";
 import { Login } from "./pages/Login"; // ログインページのコンポーネント
 import Auth from "./pages/Auth"; // 新規登録ページのコンポーネント
 //import GoogleMap from "./pages/GoogleMap"; // Aboutページのコンポーネント
 import styles from './css/App.module.css';
 
+import Snowfall from "./Snowfall";
+
 function App() {
   return (
     <BrowserRouter>
-    {/* BrowserRouterで囲みます */}
+      <Snowfall />
       <div>
-        <h1 className={styles.title}>React Router Vite デモ</h1>
+        <Link to="/" className={styles.title}>
+          ゆきどこ
+        </Link>
+
         <nav>
+          {/* ログイン・新規登録 (右上) */}
+          <div className={styles.navAuth}>
+            <Link to="/Login">ログイン</Link>
+          </div>
+
           <ul>
-            <li>
-              <Link to="/">ホーム</Link>
-            </li>
-            <li>
-              <Link to="/googleMap">GoogleMap</Link>
-            </li>
-            <li>
-              <Link to="/geolocation">Geolocation</Link>
-            </li>
-            <li>
-              <Link to="/login">ログイン</Link>
-            </li>
+
+
+            {/* 探す・共有する (横並び) */}
+            <div className={styles.navActions}>
+              <li>
+                <Link to="/Search">探す</Link>
+              </li>
+              <li>
+                <Link to="/NotLogin">共有する</Link>
+              </li>
+            </div>
           </ul>
         </nav>
 
-        {/* ルーティングの設定 */}
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/googleMap" element={<GoogleMapAPI />} />
-          <Route path="/geolocation" element={<Geolocation />} />
-          <Route  path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/auth" element={<Auth />} /> {/* 新規登録ルートを追加 */}
+          <Route path="/NotLogin" element={<NotLogin />} />
+          <Route path="/Search" element={<GoogleMapAPI />} />
+
         </Routes>
+
       </div>
     </BrowserRouter>
   );
 }
 
 export default App;
+
