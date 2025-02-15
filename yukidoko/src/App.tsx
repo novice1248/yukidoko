@@ -3,6 +3,7 @@ import { Routes, Route, Link, BrowserRouter } from "react-router-dom";
 import Home from "./pages/Home"; // ホームページのコンポーネント
 import GoogleMapAPI from "./pages/GoogleMap";
 import Geolocation from "./pages/GeoLocation";
+import Auth from "./pages/Auth"; // ログインページのコンポーネント
 //import GoogleMap from "./pages/GoogleMap"; // Aboutページのコンポーネント
 import styles from './css/App.module.css';
 
@@ -23,6 +24,9 @@ function App() {
             <li>
               <Link to="/geolocation">Geolocation</Link>
             </li>
+            <li>
+              <Link to="/login">ログイン</Link>
+            </li>
           </ul>
         </nav>
 
@@ -31,6 +35,8 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/googleMap" element={<GoogleMapAPI />} />
           <Route path="/geolocation" element={<Geolocation />} />
+          <Route  path="/" element={<Home />} />
+          <Route path="/login" element={<Auth />} />
         </Routes>
       </div>
     </BrowserRouter>
