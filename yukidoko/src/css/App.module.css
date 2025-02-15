@@ -1,3 +1,7 @@
+body {
+  background-color: #B0C4DE; /* もう少し暗いパステルブルー */
+}
+
 .title {
 
   color: transparent;
@@ -46,7 +50,7 @@ nav ul {
 /* 探す・共有するエリア */
 .navActions {
   display: flex;
-  gap: 10px; /* ボタン間のスペース */
+  gap: 50px; /* ボタン間のスペース */
 }
 
 /* ボタン共通スタイル */
@@ -112,6 +116,11 @@ nav a:hover {
   background-color: #FFA0B2;
 }
 
+/*「探す」「共有する」ボタンのみ大きくする*/
+.navActions li a {
+  padding: 15px 30px; /* ボタンを大きくする */
+  font-size: 1.2rem; /* 文字サイズを大きく */
+}
 
 
 @keyframes snowfall {
