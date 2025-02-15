@@ -6,6 +6,7 @@ import { Login } from "./pages/Login";
 import Auth from "./pages/Auth";
 import Logout from "./pages/Logout";
 import Logined from "./pages/Logined";
+import MyPage from "./pages/Mypage";
 import Snowfall from "./Snowfall";
 import { useEffect, useState } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
@@ -79,6 +80,7 @@ function App() {
           <Route path="/Logout" element={<Logout />} />
           <Route path="/Search" element={<GoogleMapAPI />} />
           <Route path="/Logined" element={<PrivateRoute element={<Logined />} />} />
+          <Route path="/Mypage" element={<MyPage />} />
         </Routes>
       </div>
     </BrowserRouter>
