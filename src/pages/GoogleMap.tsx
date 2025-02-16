@@ -53,11 +53,11 @@ function GoogleMapAPI() {
 
   // LevelData を使うステート
   const [levels] = useState<LevelData[]>([
-    { id: "Level1", label: "Low", color: "green" },
-    { id: "Level2", label: "Medium", color: "yellow" },
-    { id: "Level3", label: "High", color: "orange" },
-    { id: "Level4", label: "Very High", color: "red" },
-    { id: "Level5", label: "Extreme", color: "darkred" },
+    { id: "Level1", label: "雪がない", color: "green" },
+    { id: "Level2", label: "歩行しやすい", color: "yellow" },
+    { id: "Level3", label: "歩行しにくい", color: "orange" },
+    { id: "Level4", label: "よく転ぶ", color: "red" },
+    { id: "Level5", label: "道がない", color: "darkred" },
     { id: "Level100", label: "地球崩壊", color: "black" },
   ]);
 
