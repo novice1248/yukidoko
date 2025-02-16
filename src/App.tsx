@@ -24,7 +24,7 @@ function PrivateRoute({ element }: { element: JSX.Element }) {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [auth]);
 
   if (isAuthenticated === null) {
     return <p>読み込み中...</p>; // 認証状態の取得中
@@ -43,7 +43,7 @@ function App() {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [auth]);
 
   return (
     <BrowserRouter>
