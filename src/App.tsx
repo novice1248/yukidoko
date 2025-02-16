@@ -75,7 +75,7 @@ function App() {
                 <Link to="/Search">探す</Link>
               </li>
               <li>
-                <Link to={isAuthenticated ? "/Logined" : "/NotLogin"}>共有する</Link>
+                <Link to={isAuthenticated ? "/Search" : "/NotLogin"}>共有する</Link>
               </li>
             </div>
           </ul>
