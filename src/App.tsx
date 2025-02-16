@@ -10,7 +10,6 @@ import Snowfall from "./Snowfall";
 import ResetLogin from "./pages/ResetLogin";
 import Drop from "./pages/Drop";
 import MyPage from "./pages/Mypage";
-import UsernamePage from "./pages/UsernamePage";
 import { JSX, useEffect, useState } from "react";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
 import styles from './css/App.module.css';
@@ -92,7 +91,6 @@ function App() {
           <Route path="/ResetLogin" element={<ResetLogin />} />
           <Route path="/Drop" element={<Drop />} />
           <Route path="/Mypage" element={<MyPage />} />
-          <Route path="/UsernamePage" element={<UsernamePage />} />
           <Route path="/Logined" element={<PrivateRoute element={<Logined />} />} />
         </Routes>
       </div>
