@@ -98,20 +98,6 @@ function GoogleMapAPI() {
   const handleMapClick = (event: google.maps.MapMouseEvent) => {
     if (!event.latLng) return;
 
-    // Firestore 用の新規マーカー
-    const newMarkerForFirestore: MarkerData = {
-      lat: event.latLng.lat(),
-      lng: event.latLng.lng(),
-      title: "新しいピン",
-      levelId: "Level1",
-      isEditable: true,
-      isPlaced: false,
-      timestamp: new Date().toISOString(),
-    };
-
-    // Firestore に保存
-    savePinToFirestore(newMarkerForFirestore);
-
     if (selectedMarker && !selectedMarker.isPlaced) {
       handleRemoveMarker(selectedMarker);
     }
@@ -259,6 +245,8 @@ function GoogleMapAPI() {
         )
       );
       setSelectedMarker(updatedMarker);
+          // Firestore に保存
+    savePinToFirestore(updatedMarker);
       console.log("更新されたマーカー:", updatedMarker);
     }
   };
