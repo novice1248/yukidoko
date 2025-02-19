@@ -46,10 +46,10 @@ function App() {
   }, [auth]);
 
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/yukidoko">
       <Snowfall />
       <div>
-        <Link to="/" className={styles.title}>
+        <Link to="/home" className={styles.title}>
           ゆきどこ
         </Link>
 
@@ -82,7 +82,7 @@ function App() {
         </nav>
 
         <Routes>
-          <Route path="/" element={<Home />} />
+          <Route path="/home" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/NotLogin" element={<NotLogin />} />
