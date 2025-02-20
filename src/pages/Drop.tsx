@@ -26,7 +26,7 @@ const Drop = () => {
       try {
         await deleteUser(user);
         alert("アカウントが削除されました。");
-        navigate("/"); // 削除後、ホームへリダイレクト
+        navigate("/home"); // 削除後、ホームへリダイレクト
       } catch (error) {
         setError("エラーが発生しました。再度お試しください。");
       }
