@@ -11,6 +11,7 @@ import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import styles from './css/App.module.css';
 import Register from "./pages/Register";
 import SetPassword from "./pages/SetPassword";
+import Admin from "./pages/Admin"; // 追加
 
 // 💡 Snackbar と Alert をインポートに追加
 import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Button, Snackbar, Alert } from "@mui/material";
@@ -95,6 +96,7 @@ function AppContent() {
         <Route path="/Mypage" element={<MyPage />} />
         <Route path="/Register" element={<Register />} />
         <Route path="/SetPassword" element={<SetPassword />} />
+        <Route path="/Admin" element={<Admin />} />
       </Routes>
 
       {/* 確認ポップアップ（ダイアログ） */}

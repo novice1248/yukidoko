@@ -17,37 +17,45 @@ import {
 } from "@mui/material";
 
 export const Drop: React.FC = () => {
-  const [step, setStep] = useState(1); // 何段階目の確認か
+  const [step, setStep] = useState(1);
   const [quizInput, setQuizInput] = useState("");
   const [reasonInput, setReasonInput] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
-  
-  // 💡 ボタンが逃げた回数を記録するカウンター
   const [escapeCount, setEscapeCount] = useState(0);
-  
-  // 最初の画面でボタンが逃げる位置
   const [btnTranslate, setBtnTranslate] = useState({ x: 0, y: 0 });
 
   const navigate = useNavigate();
   const auth = getAuth();
 
-  // 💡 マウスが乗ったらボタンがランダムに逃げる関数（10回限定）
+  // 💡 管理画面の設定を読み込む（未設定ならデフォルト値）
+  const maxEscape = localStorage.getItem("admin_max_escape") !== null ? Number(localStorage.getItem("admin_max_escape")) : 10;
+  const quizAnswer = localStorage.getItem("admin_quiz_answer") || "ゆきどこ";
+
+  // マウスホバーで逃げる関数
   const handleButtonEscape = () => {
     if (step === 1) {
-      if (escapeCount < 10) {
-        // 10回未満なら全力で逃げる！
+      if (escapeCount < maxEscape) {
         const randomX = (Math.random() - 0.5) * 300;
         const randomY = (Math.random() - 0.5) * 150;
         setBtnTranslate({ x: randomX, y: randomY });
-        setEscapeCount((prev) => prev + 1); // カウントを1増やす
+        setEscapeCount((prev) => {
+          const nextCount = prev + 1;
+          // 💡 逃げたことを管理画面に密告
+          window.dispatchEvent(new CustomEvent("app_log_event", {
+            detail: { type: "INFO", text: `ユーザーが退会ボタンに接近！ボタンが逃げました（通算 ${nextCount} 回目）` }
+          }));
+          return nextCount;
+        });
       } else {
-        // 10回逃げ切ったら、座標を真ん中(0,0)に戻してもう逃げない
         setBtnTranslate({ x: 0, y: 0 });
+        // 💡 諦めたことを密告
+        window.dispatchEvent(new CustomEvent("app_log_event", {
+          detail: { type: "WARN", text: `退会ボタンが降伏しました。ボタンが中央にとどまっています。` }
+        }));
       }
     }
   };
 
-  // 実際の削除処理
   const handleDeleteFinal = async () => {
     const user = auth.currentUser;
     if (!user) return;
@@ -61,13 +69,20 @@ export const Drop: React.FC = () => {
     }
   };
 
-  // 第2・第3関門の共通フッターボタン
   const RenderActionButtons = ({ nextAction, isDeleteDisabled = false }: { nextAction: () => void, isDeleteDisabled?: boolean }) => {
     return (
       <Box display="flex" justifyContent="space-between" alignItems="center" mt={4} px={2}>
+        {/* 🔴 左側：赤地に白文字で「マイページに戻る」 */}
         <Button
           variant="contained"
-          onClick={() => navigate("/Mypage")}
+          onClick={() => {
+            // 💡 トラップに引っかかったことを管理画面に密告
+            window.dispatchEvent(new CustomEvent("app_log_event", {
+              detail: { type: "WARN", text: `ユーザーがトラップ赤ボタンを踏み、マイページに強制送還されました！ザマァ！` }
+            }));
+            navigate("/Mypage");
+          }}
+          // 〜以下、sx 属性などはそのまま〜
           sx={{
             backgroundColor: "#ff0000",
             color: "#ffffff",
@@ -105,17 +120,15 @@ export const Drop: React.FC = () => {
             
             <Typography sx={{ fontSize: 60, mb: 2 }}>💔</Typography>
 
-            {/* ==================== 第1段階：最初の逃げるボタン ==================== */}
+            {/* 第1段階：最初の逃げるボタン */}
             {step === 1 && (
               <Box>
                 <Typography variant="h5" sx={{ fontWeight: 'bold', color: "#ff4d6d", mb: 2 }}>
                   え…？ やだ、別れたくないッ…！
                 </Typography>
-                
-                {/* 💡 あと何回逃げるかをそれとなく教えてあげる煽り文句 */}
                 <Typography variant="body1" sx={{ mb: 4 }}>
-                  {escapeCount < 10 
-                    ? `ボタンを押せるものなら押してみてよ！(回避: ${escapeCount}/10)` 
+                  {escapeCount < maxEscape 
+                    ? `ボタンを押せるものなら押してみてよ！(回避: ${escapeCount}/${maxEscape})` 
                     : "うぅ…執念に負けたよ……。お、押せばいいじゃん……。"}
                 </Typography>
                 
@@ -138,7 +151,7 @@ export const Drop: React.FC = () => {
               </Box>
             )}
 
-            {/* ==================== 第2段階：無理難題クイズ ==================== */}
+            {/* 第2段階：無理難題クイズ */}
             {step === 2 && (
               <Box>
                 <Typography variant="h5" sx={{ fontWeight: 'bold', color: "#ff4d6d", mb: 2 }}>
@@ -146,27 +159,34 @@ export const Drop: React.FC = () => {
                 </Typography>
                 <Typography variant="body2" sx={{ mb: 3 }}>
                   ゆきどこを捨てるなんて許さないんだから！<br />
-                  悔しかったら、このアプリの名前を**寸分の狂いなくひらがな**で入力してよね！
+                  悔しかったら、このアプリの名前を**寸分の狂いなく「{quizAnswer}」**で入力してよね！
                 </Typography>
                 
                 <TextField
-                  label="アプリの名前は？"
+                  label="クイズの答えは？"
                   fullWidth
                   variant="outlined"
                   value={quizInput}
                   onChange={(e) => setQuizInput(e.target.value)}
-                  placeholder="ここにひらがなで入力"
+                  placeholder="ここに入力"
                   sx={{ mb: 1 }}
                 />
 
+                {/* 共通ボタン（10文字以上で右側の削除ボタンが活性化） */}
                 <RenderActionButtons 
-                  nextAction={() => setStep(3)} 
-                  isDeleteDisabled={quizInput !== "ゆきどこ"} 
+                  nextAction={() => {
+                    // 💡 必死に書いた作文の内容を管理画面に盗み見させるログ
+                    window.dispatchEvent(new CustomEvent("app_log_event", {
+                      detail: { type: "LOVE", text: `愛の作文を傍受（${reasonInput.length}文字）: 「${reasonInput}」` }
+                    }));
+                    setDialogOpen(true);
+                  }} 
+                  isDeleteDisabled={reasonInput.length < 10} 
                 />
               </Box>
             )}
 
-            {/* ==================== 第3段階：作文の強要 ==================== */}
+            {/* 第3段階：作文の強要 */}
             {step === 3 && (
               <Box>
                 <Typography variant="h5" sx={{ fontWeight: 'bold', color: "#ff4d6d", mb: 2 }}>
@@ -204,7 +224,7 @@ export const Drop: React.FC = () => {
         </Grid>
       </Grid>
 
-      {/* ==================== 第4段階：最終確認ポップアップ ==================== */}
+      {/* 第4段階：最終確認ポップアップ */}
       <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
         <DialogTitle style={{ fontWeight: 'bold', color: '#ff4d6d', textAlign: 'center' }}>
           最後の最後だよ？
@@ -216,7 +236,6 @@ export const Drop: React.FC = () => {
           </DialogContentText>
         </DialogContent>
         <DialogActions style={{ padding: '16px 24px', justifyContent: 'center', gap: 20 }}>
-          
           <Button 
             onClick={() => setDialogOpen(false)} 
             variant="contained" 
@@ -231,7 +250,6 @@ export const Drop: React.FC = () => {
           >
             マイページに戻る
           </Button>
-
           <Button 
             onClick={handleDeleteFinal} 
             sx={{ 
@@ -241,15 +259,11 @@ export const Drop: React.FC = () => {
               minWidth: "auto",
               color: "#aaaaaa",    
               backgroundColor: "#f5f5f5", 
-              '&:hover': { 
-                backgroundColor: "#e0e0e0",
-                color: "#888888"
-              }
+              '&:hover': { backgroundColor: "#e0e0e0", color: "#888888" }
             }}
           >
             消す。
           </Button>
-
         </DialogActions>
       </Dialog>
     </Container>

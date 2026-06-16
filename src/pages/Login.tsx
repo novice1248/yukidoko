@@ -97,10 +97,45 @@ export const Login: React.FC = () => {
                         <Snackbar open={open} autoHideDuration={3000} onClose={() => setOpen(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
                             <Alert severity={alertSeverity} sx={{ width: '100%', borderRadius: 2 }}>{alertMessage}</Alert>
                         </Snackbar>
-                    </Paper>
-                </Grid>
-            </Grid>
-        </Container>
+                    {/* 🤫 右下にひっそり隠された、管理者専用の裏口ボタン */}
+    {/* 🤫 右下にひっそり隠された、管理者専用の裏口ボタン（ちょっと拡大版） */}
+    <Box 
+        sx={{ 
+            position: "fixed", 
+            bottom: 20, // 少し内側に寄せて押しやすく
+            right: 20, 
+            zIndex: 999 
+        }}
+    >
+        <Button 
+            onClick={() => navigate("/admin")}
+            variant="outlined" // 💡 うっすら枠線をつけてボタンっぽさを認識しやすく
+            sx={{ 
+                fontSize: "0.85rem", // 💡 0.65rem から少しサイズアップ
+                color: "rgba(44, 62, 80, 0.3)", // 普段の文字色をベースに薄く
+                borderColor: "rgba(44, 62, 80, 0.2)", // 枠線も最初はうっすら
+                minWidth: "auto",
+                padding: "6px 12px", // 💡 指やマウスでしっかり捉えられるサイズに
+                borderRadius: "12px",
+                backgroundColor: "rgba(255, 255, 255, 0.1)", // 背景に馴染む半透明
+                backdropFilter: "blur(4px)", // すりガラス風（お洒落ポイント）
+                transition: "all 0.3s ease",
+                '&:hover': { 
+                    color: "#0056b3", // マウスを乗せたらクッキリきれいな青に
+                    borderColor: "#0056b3",
+                    backgroundColor: "rgba(255, 255, 255, 0.8)", // ホバー時はしっかり白ベースに
+                    transform: "scale(1.05)"
+                }
+            }}
+        >
+            ⚙️ 管理画面
+        </Button>
+    </Box>
+
+  </Paper>
+</Grid>
+</Grid>
+</Container> // 👈 一番最後の閉じタグのすぐ上が定位置です
     );
 };
 export default Login;
