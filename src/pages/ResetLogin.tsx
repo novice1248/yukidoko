@@ -17,11 +17,11 @@ const ResetLogin = () => {
 
     try {
       await sendPasswordResetEmail(auth, email);
-      setMessage("パスワードリセットのメールを送信しました。");
+      // 💡 エラーが出ない前提で、安全な表現のメッセージにする
+      setMessage("入力されたアドレスが登録されている場合、再設定用のメールを送信しました。Googleで登録された方はGoogleログインをお試しください。");
     } catch (error: any) {
-      if (error.code === "auth/user-not-found") {
-        setError("このメールアドレスは登録されていません。");
-      } else if (error.code === "auth/invalid-email") {
+      // 💡 メールアドレスの形式自体が間違っている場合などは引き続きエラーが出ます
+      if (error.code === "auth/invalid-email") {
         setError("無効なメールアドレスです。");
       } else {
         setError("エラーが発生しました。もう一度お試しください。");
@@ -61,4 +61,3 @@ const ResetLogin = () => {
 };
 
 export default ResetLogin;
-

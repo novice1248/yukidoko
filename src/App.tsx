@@ -1,15 +1,17 @@
-import { Routes, Route, Link, BrowserRouter, Navigate, useLocation } from "react-router-dom";
+import { Routes, Route, Link, BrowserRouter, Navigate, useLocation, useNavigate } from "react-router-dom";
 import Home from "./pages/Home";
 import GoogleMapAPI from "./pages/GoogleMap";
 import { Login } from "./pages/Login";
-import Logout from "./pages/Logout";
 import MyPage from "./pages/Mypage";
 import ResetLogin from "./pages/ResetLogin";
 import Drop from "./pages/Drop";
 import Snowfall from "./Snowfall";
 import { JSX, useEffect, useState } from "react";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import styles from './css/App.module.css';
+
+// 💡 Snackbar と Alert をインポートに追加
+import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Button, Snackbar, Alert } from "@mui/material";
 
 function PrivateRoute({ element }: { element: JSX.Element }) {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
@@ -31,8 +33,15 @@ function PrivateRoute({ element }: { element: JSX.Element }) {
 
 function AppContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [logoutDialogOpen, setLogoutDialogOpen] = useState(false); // ポップアップの開閉状態
+  
+  // 💡 ログアウト通知用のステートを追加
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+  const [snackbarMessage, setSnackbarMessage] = useState("");
+
   const auth = getAuth();
   const location = useLocation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -43,6 +52,25 @@ function AppContent() {
 
   const isLoginPage = location.pathname.toLowerCase() === "/login";
 
+  // 実際にログアウトを実行する関数
+  const handleLogoutConfirm = async () => {
+    try {
+      await signOut(auth);
+      setLogoutDialogOpen(false); // ダイアログを閉じる
+      
+      // 💡 ポップアップメッセージを設定して表示する
+      setSnackbarMessage("ログアウトしました。");
+      setSnackbarOpen(true);
+
+      // ポップアップをしっかり見せるために、1秒待ってからホームに移動する
+      setTimeout(() => {
+        navigate("/home");
+      }, 1000);
+    } catch (error) {
+      console.error("ログアウトに失敗しました", error);
+    }
+  };
+
   return (
     <div>
       <header className={styles.header}>
@@ -51,17 +79,21 @@ function AppContent() {
           ゆきどこ
         </Link>
 
-        {/* 右側：認証・アカウント周りのみ（すっきり配置） */}
+        {/* 右側：認証・アカウント周り */}
         <nav className={styles.navBar}>
           <div className={styles.navAuth}>
             {!isAuthenticated ? (
-              // ログインページ以外ならログインボタンを表示
               !isLoginPage && <Link to="/Login" className={styles.loginBtn}>ログイン</Link>
             ) : (
-              // ログイン中ならマイページとログアウトを表示
               <div className={styles.loginedLinks}>
                 <Link to="/Mypage" className={styles.headerLink}>マイページ</Link>
-                <Link to="/Logout" className={styles.headerLink}>ログアウト</Link>
+                <span 
+                  className={styles.headerLink} 
+                  onClick={() => setLogoutDialogOpen(true)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  ログアウト
+                </span>
               </div>
             )}
           </div>
@@ -72,12 +104,51 @@ function AppContent() {
         <Route path="/" element={<Navigate to="/home" replace />} />
         <Route path="/home" element={<Home isAuthenticated={isAuthenticated} />} />
         <Route path="/login" element={<Login />} />
-        <Route path="/Logout" element={<Logout />} />
         <Route path="/Search" element={<GoogleMapAPI />} />
         <Route path="/ResetLogin" element={<ResetLogin />} />
         <Route path="/Drop" element={<Drop />} />
         <Route path="/Mypage" element={<MyPage />} />
       </Routes>
+
+      {/* 確認ポップアップ（ダイアログ） */}
+      <Dialog
+        open={logoutDialogOpen}
+        onClose={() => setLogoutDialogOpen(false)}
+        aria-labelledby="logout-dialog-title"
+        aria-describedby="logout-dialog-description"
+        PaperProps={{
+          style: { borderRadius: 16, padding: 8 }
+        }}
+      >
+        <DialogTitle id="logout-dialog-title" style={{ fontWeight: 'bold' }}>
+          {"ログアウトの確認"}
+        </DialogTitle>
+        <DialogContent>
+          <DialogContentText id="logout-dialog-description">
+            本当に「ゆきどこ」からログアウトしますか？
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions style={{ padding: '8px 24px 16px' }}>
+          <Button onClick={() => setLogoutDialogOpen(false)} color="inherit" variant="outlined" style={{ borderRadius: 20 }}>
+            キャンセル
+          </Button>
+          <Button onClick={handleLogoutConfirm} color="error" variant="contained" style={{ borderRadius: 20 }} autoFocus>
+            ログアウトする
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* 💡 ログアウト完了を通知するポップアップを追加 */}
+      <Snackbar 
+        open={snackbarOpen} 
+        autoHideDuration={3000} 
+        onClose={() => setSnackbarOpen(false)}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }} // 画面の下側中央に表示
+      >
+        <Alert onClose={() => setSnackbarOpen(false)} severity="success" sx={{ width: '100%', borderRadius: 2 }}>
+          {snackbarMessage}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }
