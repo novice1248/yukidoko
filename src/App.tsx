@@ -49,42 +49,32 @@ function App() {
     <BrowserRouter basename="/yukidoko">
       <Snowfall />
       <div>
-        <Link to="/home" className={styles.title}>
-          ゆきどこ
-        </Link>
+        {/* ヘッダーエリアの共通化 */}
+        <header className={styles.header}>
+          <Link to="/home" className={styles.title}>
+            ゆきどこ
+          </Link>
 
-        <nav>
-          <div className={styles.navAuth}>
-            {!isAuthenticated ? (
-              <Link to="/Login">ログイン</Link>
-            ) : (
-              <div>
-                <li>
-                  <Link to="/Logout">ログアウト</Link>
-                </li>
-                <li>
-                  <Link to="/Mypage">マイページ</Link>
-                </li>
-              </div>
-            )}
-          </div>
-
-          <ul>
-            <div className={styles.navActions}>
-              <li>
-                <Link to="/Search">探す</Link>
-              </li>
-              <li>
-                <Link to={isAuthenticated ? "/Search" : "/NotLogin"}>共有する</Link>
-              </li>
+          <nav className={styles.navBar}>
+            <div className={styles.navAuth}>
+              {!isAuthenticated ? (
+                <Link to="/Login" className={styles.loginBtn}>ログイン</Link>
+              ) : (
+                <div className={styles.loginedLinks}>
+                  <Link to="/Mypage" className={styles.headerLink}>マイページ</Link>
+                  <Link to="/Logout" className={styles.headerLink}>ログアウト</Link>
+                </div>
+              )}
             </div>
-          </ul>
-        </nav>
+          </nav>
+        </header>
 
         <Routes>
-          {/* 👇 ここを追加：/ にアクセスされたら /home にリダイレクトする */}
+          {/* 最初のアクセスで /home にリダイレクト */}
           <Route path="/" element={<Navigate to="/home" replace />} />
-          <Route path="/home" element={<Home />} />
+
+          {/* 認証状態を渡す */}
+          <Route path="/home" element={<Home isAuthenticated={isAuthenticated} />} />
           <Route path="/login" element={<Login />} />
           <Route path="/auth" element={<Auth />} />
           <Route path="/NotLogin" element={<NotLogin />} />
