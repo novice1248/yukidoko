@@ -245,8 +245,8 @@ function GoogleMapAPI() {
         )
       );
       setSelectedMarker(updatedMarker);
-          // Firestore に保存
-    savePinToFirestore(updatedMarker);
+      // Firestore に保存
+      savePinToFirestore(updatedMarker);
       console.log("更新されたマーカー:", updatedMarker);
     }
   };
