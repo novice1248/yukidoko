@@ -9,8 +9,8 @@ import {
 import { db } from "../firebase";
 import { collection, addDoc, getDocs } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
+import { Fab, Box } from "@mui/material";
 
-// LevelData インターフェース
 interface LevelData {
   id: string;
   label: string;
@@ -44,6 +44,13 @@ function GoogleMapAPI() {
   const mapId = import.meta.env.VITE_GOOGLE_MAP_ID || "";
   const [isAvailable, setAvailable] = useState(false);
   const [position, setPosition] = useState<Position>({ latitude: null, longitude: null });
+  
+  // 💡 マップの表示中心
+  const [mapCenter, setMapCenter] = useState<google.maps.LatLngLiteral>({ lat: 0, lng: 0 });
+  
+  // 💡 【修正のキモ】useStateではなく、タイマー内でも最新値を参照できる useRef を使用！
+  const isFirstLoad = useRef(true);
+
   const [markers, setMarkers] = useState<MarkerData[]>([]);
   const [path, setPath] = useState<google.maps.LatLngLiteral[]>([]);
   const [selectedMarker, setSelectedMarker] = useState<MarkerData | null>(null);
@@ -64,8 +71,31 @@ function GoogleMapAPI() {
   useEffect(() => {
     if ("geolocation" in navigator) {
       setAvailable(true);
-      getCurrentPosition();
-      const interval = setInterval(getCurrentPosition, 5000);
+      
+      // 💡 取得ロジックを useEffect 内にまとめることで、タイマーのバグとVSCodeのエラー波線を防止
+      const fetchLocation = () => {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const { latitude, longitude } = pos.coords;
+            setPosition({ latitude, longitude });
+            setPath((prevPath) => [...prevPath, { lat: latitude, lng: longitude }]);
+            
+            // useRefを使っているので、5秒後でも最新の状態を正しく認識できる
+            if (isFirstLoad.current) {
+              setMapCenter({ lat: latitude, lng: longitude });
+              isFirstLoad.current = false; // 一度中心を合わせたら即座にへし折る
+            }
+          },
+          (error) => {
+            console.error("位置情報の取得に失敗しました", error);
+            setAvailable(false);
+          }
+        );
+      };
+
+      fetchLocation(); // 初回ロード
+      const interval = setInterval(fetchLocation, 5000); // 以降5秒ごとのループ
+      
       loadPinsFromFirestore();
       return () => clearInterval(interval);
     } else {
@@ -74,18 +104,14 @@ function GoogleMapAPI() {
     }
   }, []);
 
-  const getCurrentPosition = () => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setPosition({ latitude, longitude });
-        setPath((prevPath) => [...prevPath, { lat: latitude, lng: longitude }]);
-      },
-      (error) => {
-        console.error("位置情報の取得に失敗しました", error);
-        setAvailable(false);
+  const handleRecenter = () => {
+    if (position.latitude && position.longitude) {
+      const newCenter = { lat: position.latitude, lng: position.longitude };
+      setMapCenter(newCenter);
+      if (mapRef.current) {
+        mapRef.current.panTo(newCenter);
       }
-    );
+    }
   };
 
   const handleRemoveMarker = (marker: MarkerData) => {
@@ -95,12 +121,10 @@ function GoogleMapAPI() {
   const handleMapClick = (event: google.maps.MapMouseEvent) => {
     if (!event.latLng) return;
 
-    // 💡 【新機能】ログイン状態の厳密チェック
     const auth = getAuth();
     const user = auth.currentUser;
 
     if (!user) {
-      // ログインしていなければエラーを表示して処理を完全にブロック
       setErrorMessage("ピンを設置するにはログインが必要です");
       window.dispatchEvent(new CustomEvent("app_log_event", {
         detail: { type: "WARN", text: "ゲストユーザーがマップをクリックしました。ログインしていないためピン設置を阻止しました。" }
@@ -108,7 +132,6 @@ function GoogleMapAPI() {
       return;
     }
 
-    // まだ保存（確定）していない選択中のマーカーがあれば削除してリセット
     if (selectedMarker && !selectedMarker.isPlaced) {
       handleRemoveMarker(selectedMarker);
     }
@@ -119,7 +142,6 @@ function GoogleMapAPI() {
     let isWithinPolyLine = false;
     let isWithinMarker = false;
 
-    // 1. ポリライン（現在地ルート）の30m以内かチェック
     for (let i = 0; i < path.length; i++) {
       const distanceBetweenPolyLine = google.maps.geometry.spherical.computeDistanceBetween(
         newMarkerPosition,
@@ -131,7 +153,6 @@ function GoogleMapAPI() {
       }
     }
 
-    // 2. 既存のマーカーから10m以内かチェック
     for (let i = 0; i < markers.length; i++) {
       const existingMarker = markers[i];
       const distanceBetweenMarker = google.maps.geometry.spherical.computeDistanceBetween(
@@ -144,10 +165,7 @@ function GoogleMapAPI() {
       }
     }
 
-    // 3. 条件判定：30m以内で、かつ10m以内に既存ピンがない場合のみ設置処理へ
     if (isWithinPolyLine && !isWithinMarker) {
-
-      // 【12時間経過した古いピンの置き換えチェック】
       const markersToCheck = markers.filter((marker) => {
         const markerTimestamp = new Date(marker.timestamp);
         const currentTime = new Date();
@@ -175,7 +193,6 @@ function GoogleMapAPI() {
         handleRemoveMarker(closestMarker);
       }
 
-      // 新しいマーカーを追加
       const newMarker: MarkerData = {
         lat: newMarkerPosition.lat(),
         lng: newMarkerPosition.lng(),
@@ -275,99 +292,121 @@ function GoogleMapAPI() {
   if (!isLoaded) return <div>Google Maps API のロード中...</div>;
 
   return (
-    <GoogleMap
-      mapContainerStyle={{ width: "100%", height: "500px" }}
-      center={{ lat: position.latitude || 0, lng: position.longitude || 0 }}
-      zoom={zoom}
-      onLoad={(map) => {
-        mapRef.current = map;
-      }} 
-      onZoomChanged={handleZoomChanged}
-      options={{
-        mapId: mapId,
-        disableDefaultUI: false,
-        clickableIcons: false,
-        streetViewControl: false,
-        mapTypeControl: false,
-        styles: [
-          {
-            featureType: "all",
-            elementType: "labels",
-            stylers: [{ visibility: "off" }],
-          },
-        ],
-      }}
-      onClick={handleMapClick}
-    >
-      {/* 既存マーカーの描画 */}
-      {markers.map((marker, index) => (
-        <Marker
-          key={index}
-          position={{ lat: marker.lat, lng: marker.lng }}
-          icon={{
-            path: google.maps.SymbolPath.CIRCLE,
-            fillColor:
-              levels.find((level) => level.id === marker.levelId)?.color || "gray",
-            fillOpacity: 1,
-            scale: Math.max(8, zoom / 2),
-            strokeColor: "white",
-            strokeWeight: 2,
-          }}
-          onClick={() => setSelectedMarker(marker)}
-        />
-      ))}
+    <Box sx={{ position: "relative", width: "100%", height: "500px" }}>
+      <GoogleMap
+        mapContainerStyle={{ width: "100%", height: "100%" }}
+        center={mapCenter}
+        zoom={zoom}
+        onLoad={(map) => {
+          mapRef.current = map;
+        }} 
+        onZoomChanged={handleZoomChanged}
+        options={{
+          mapId: mapId,
+          disableDefaultUI: false,
+          clickableIcons: false,
+          streetViewControl: false,
+          mapTypeControl: false,
+          styles: [
+            {
+              featureType: "all",
+              elementType: "labels",
+              stylers: [{ visibility: "off" }],
+            },
+          ],
+        }}
+        onClick={handleMapClick}
+      >
+        {/* 既存マーカーの描画 */}
+        {markers.map((marker, index) => (
+          <Marker
+            key={index}
+            position={{ lat: marker.lat, lng: marker.lng }}
+            icon={{
+              path: google.maps.SymbolPath.CIRCLE,
+              fillColor:
+                levels.find((level) => level.id === marker.levelId)?.color || "gray",
+              fillOpacity: 1,
+              scale: Math.max(8, zoom / 2),
+              strokeColor: "white",
+              strokeWeight: 2,
+            }}
+            onClick={() => setSelectedMarker(marker)}
+          />
+        ))}
 
-      {/* エラーメッセージ用 InfoWindow */}
-      {errorMessage && (
-        <InfoWindow
-          position={{
-            lat: position.latitude || 0,
-            lng: position.longitude || 0,
-          }}
-          onCloseClick={() => setErrorMessage("")}
-        >
-          <div style={{ color: "red" }}>
-            <h3>{errorMessage}</h3>
-          </div>
-        </InfoWindow>
-      )}
+        {/* エラーメッセージ用 InfoWindow */}
+        {errorMessage && (
+          <InfoWindow
+            position={{
+              lat: position.latitude || 0,
+              lng: position.longitude || 0,
+            }}
+            onCloseClick={() => setErrorMessage("")}
+          >
+            <div style={{ color: "red" }}>
+              <h3>{errorMessage}</h3>
+            </div>
+          </InfoWindow>
+        )}
 
-      {/* マーカーをクリックしたときの InfoWindow */}
-      {selectedMarker && (
-        <InfoWindow
-          position={{ lat: selectedMarker.lat, lng: selectedMarker.lng }}
-          onCloseClick={() => {
-            if (!selectedMarker.isPlaced) {
-              handleRemoveMarker(selectedMarker);
-            }
-            setSelectedMarker(null);
-          }}
-        >
-          <div>
-            <h3>{selectedMarker.title}</h3>
-            <p>投稿者: <strong>{selectedMarker.userName || "名無しのユーザー"}</strong></p>
-            <p>日時: {new Date(selectedMarker.timestamp).toLocaleString()}</p>
-            <p>レベル: {selectedMarker.levelId}</p>
+        {/* マーカーをクリックしたときの InfoWindow */}
+        {selectedMarker && (
+          <InfoWindow
+            position={{ lat: selectedMarker.lat, lng: selectedMarker.lng }}
+            onCloseClick={() => {
+              if (!selectedMarker.isPlaced) {
+                handleRemoveMarker(selectedMarker);
+              }
+              setSelectedMarker(null);
+            }}
+          >
+            <div>
+              <h3>{selectedMarker.title}</h3>
+              <p>投稿者: <strong>{selectedMarker.userName || "名無しのユーザー"}</strong></p>
+              <p>日時: {new Date(selectedMarker.timestamp).toLocaleString()}</p>
+              <p>レベル: {selectedMarker.levelId}</p>
 
-            {selectedMarker.isEditable && (
-              <div>
-                {levels.map((level) => (
-                  <button
-                    key={level.id}
-                    onClick={() => handleSaveMarker(level.id)}
-                    style={{ backgroundColor: level.color, marginRight: "6px" }}
-                  >
-                    {level.label}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-        </InfoWindow>
-      )}
+              {selectedMarker.isEditable && (
+                <div>
+                  {levels.map((level) => (
+                    <button
+                      key={level.id}
+                      onClick={() => handleSaveMarker(level.id)}
+                      style={{ backgroundColor: level.color, marginRight: "6px" }}
+                    >
+                      {level.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </InfoWindow>
+        )}
 
-      <Polyline path={path} options={{ strokeColor: "#FF0000" }} />
-    </GoogleMap>
+        <Polyline path={path} options={{ strokeColor: "#FF0000" }} />
+      </GoogleMap>
+
+      {/* 🧭 右上に浮かぶ現在地復帰ボタン */}
+      <Fab
+        color="primary"
+        size="small"
+        onClick={handleRecenter}
+        sx={{
+          position: "absolute",
+          top: 12,
+          right: 60,
+          backgroundColor: "#ffffff",
+          color: "#333333",
+          fontSize: "1.2rem",
+          '&:hover': {
+            backgroundColor: "#f5f5f5",
+          }
+        }}
+      >
+        🧭
+      </Fab>
+    </Box>
   );
 }
 
