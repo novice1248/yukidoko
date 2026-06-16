@@ -46,6 +46,31 @@ export const Login: React.FC = () => {
     const [alertMessage, setAlertMessage] = useState("");
     const [alertSeverity, setAlertSeverity] = useState<"success" | "error" | "info">("info");
 
+    // Firebaseのエラーコードを日本語に変換するヘルパー関数
+    const getErrorMessage = (errorCode: string): string => {
+        switch (errorCode) {
+            // メール・パスワード認証のエラー
+            case "auth/user-not-found":
+            case "auth/invalid-email": // メールアドレスの形式が正しくない場合など
+                return "メールアドレスまたはパスワードが間違っています。";
+            case "auth/wrong-password":
+            case "auth/invalid-credential": // Firebase v10以降の統合されたエラーコード
+                return "メールアドレスまたはパスワードが間違っています。";
+            case "auth/too-many-requests":
+                return "何度もログインに失敗したため、アカウントが一時的にロックされています。しばらく経ってから再度お試しください。";
+
+            // Googleポップアップのエラー
+            case "auth/popup-closed-by-user":
+                return "ログインポップアップが閉じられました。もう一度お試しください。";
+            case "auth/cancelled-popup-request":
+                return "認証リクエストがキャンセルされました。";
+
+            // 共通・その他
+            default:
+                return "ログインに失敗しました。時間をおいて再度お試しください。";
+        }
+    };
+
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             setUser(currentUser);
@@ -53,44 +78,42 @@ export const Login: React.FC = () => {
                 setAlertMessage("ログインが完了しました。"); // ログイン完了メッセージ
                 setAlertSeverity("success");
                 setOpen(true);
-                navigate("/Logined"); // リダイレクト
+                // 画面遷移を少し遅らせることで、ログイン成功のポップアップをユーザーに見せる
+                setTimeout(() => {
+                    navigate("/Logined"); // リダイレクト
+                }, 1000);
             }
         });
 
         return () => unsubscribe();
     }, [navigate]);
 
+    // Googleログイン
     const signIn = async () => {
-        const auth = getAuth();
         const provider = new GoogleAuthProvider();
-
         // 毎回アカウント選択画面を表示
         provider.setCustomParameters({ prompt: 'select_account' });
 
         try {
             const result = await signInWithPopup(auth, provider);
             console.log("ログイン成功: ", result.user);
-        } catch (error) {
+        } catch (error: any) {
             console.error("ログインエラー: ", error);
+            // 日本語エラーメッセージをセットしてポップアップを表示
+            setAlertMessage(getErrorMessage(error.code));
+            setAlertSeverity("error");
+            setOpen(true);
         }
     };
 
-
+    // メールアドレスログイン
     const signInWithEmail = async () => {
         try {
             await signInWithEmailAndPassword(auth, email, password);
         } catch (error: any) {
             console.error(error);
-            switch (error.code) {
-                case "auth/user-not-found":
-                    setAlertMessage("ユーザーが見つかりません。");
-                    break;
-                case "auth/wrong-password":
-                    setAlertMessage("パスワードが間違っています。");
-                    break;
-                default:
-                    setAlertMessage(error.message);
-            }
+            // 日本語エラーメッセージをセットしてポップアップを表示
+            setAlertMessage(getErrorMessage(error.code));
             setAlertSeverity("error");
             setOpen(true);
         }

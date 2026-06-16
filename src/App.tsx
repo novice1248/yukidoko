@@ -59,12 +59,12 @@ function App() {
               <Link to="/Login">ログイン</Link>
             ) : (
               <div>
-              <li>
-              <Link to="/Logout">ログアウト</Link>
-              </li>
-              <li>
-              <Link to="/Mypage">マイページ</Link>
-              </li>
+                <li>
+                  <Link to="/Logout">ログアウト</Link>
+                </li>
+                <li>
+                  <Link to="/Mypage">マイページ</Link>
+                </li>
               </div>
             )}
           </div>
@@ -82,6 +82,8 @@ function App() {
         </nav>
 
         <Routes>
+          {/* 👇 ここを追加：/ にアクセスされたら /home にリダイレクトする */}
+          <Route path="/" element={<Navigate to="/home" replace />} />
           <Route path="/home" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/auth" element={<Auth />} />
