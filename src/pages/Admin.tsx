@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { getAuth, signInWithEmailAndPassword } from "firebase/auth"; // 💡 Firebase Authを導入
 import {
   Container,
   Typography,
@@ -12,7 +13,6 @@ import {
   Divider,
 } from "@mui/material";
 
-// 💡 ログの型定義
 interface LogItem {
   time: string;
   type: "INFO" | "WARN" | "SYSTEM" | "LOVE";
@@ -20,32 +20,39 @@ interface LogItem {
 }
 
 export const Admin: React.FC = () => {
-  const [idInput, setIdInput] = useState("");
+  const [emailInput, setEmailInput] = useState(""); // 💡 IDからメールアドレス入力へ変更
   const [passwordInput, setPasswordInput] = useState("");
   const [isAdmin, setIsAdmin] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
 
-  // 天候・難易度設定のステート
   const [actualSnowCount, setActualSnowCount] = useState<number>(Number(localStorage.getItem("admin_snow_count")) || 80);
   const [sliderSnowCount, setSliderSnowCount] = useState<number>(Number(localStorage.getItem("admin_snow_count")) || 80);
   const [maxEscape, setMaxEscape] = useState<number>(localStorage.getItem("admin_max_escape") !== null ? Number(localStorage.getItem("admin_max_escape")) : 10);
   const [quizAnswer, setQuizAnswer] = useState<string>(localStorage.getItem("admin_quiz_answer") || "ゆきどこ");
-
-  // 💡 【新機能】本物のリアルタイムログを格納する配列
   const [logs, setLogs] = useState<LogItem[]>([]);
 
   const navigate = useNavigate();
+  const auth = getAuth(); // 💡 Firebase Authインスタンスの取得
 
-  // 🔒 ログイン認証
-  const handleLogin = (e: React.FormEvent) => {
+  // 🔒 ログイン認証（安全なバックエンド・FirebaseAuth認証へ変更）
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (idInput === "admin" && passwordInput === "yukidoko") {
-      setIsAdmin(true);
-      setErrorMsg("");
-      // 管理画面に入った瞬間のシステムログを最初に入れる
-      addLog("SYSTEM", "管理画面デバッグセッションが開始されました。");
-    } else {
-      setErrorMsg("IDまたはパスワードが違います。");
+    try {
+      // 1. まずFirebaseで認証（アカウントが存在し、パスワードが合っているか）
+      const userCredential = await signInWithEmailAndPassword(auth, emailInput, passwordInput);
+      
+      // 💡 2. ログインした人のメールアドレスが、自分の決めた管理者用アドレスかチェック！
+      if (userCredential.user.email === "admin@yukidoko.com") { // 👈 ここに管理者アドレスを指定
+        setIsAdmin(true);
+        setErrorMsg("");
+        addLog("SYSTEM", "管理画面デバッグセッションが開始されました。");
+      } else {
+        // 一般ユーザーだったら、ログアウトさせて突き返す
+        await auth.signOut();
+        setErrorMsg("一般ユーザーは神の領域に立ち入ることはできません。");
+      }
+    } catch (error: any) {
+      setErrorMsg("メールアドレスまたはパスワードが違います。");
     }
   };
 
@@ -53,14 +60,12 @@ export const Admin: React.FC = () => {
     setSliderSnowCount(newValue as number);
   };
 
-  // 💡 ログを追加する共通関数
   const addLog = (type: LogItem["type"], text: string) => {
     const newLog: LogItem = {
       time: new Date().toLocaleTimeString(),
       type,
       text,
     };
-    // 最大100件まで保持して、古いものは捨てる
     setLogs((prev) => [newLog, ...prev].slice(0, 100));
   };
 
@@ -73,10 +78,17 @@ export const Admin: React.FC = () => {
       }
     };
 
-    // 「app_log_event」という名前のイベントを24時間監視
     window.addEventListener("app_log_event", handleIncomingLog);
-    return () => window.removeEventListener("app_log_event", handleIncomingLog);
-  }, []);
+    
+    // 🚪 画面から離れた（コンポーネントがアンマウントされた）ときの処理
+    return () => {
+      window.removeEventListener("app_log_event", handleIncomingLog);
+      
+      // 💡 他の画面に遷移した瞬間に、Firebaseのセッションも確実に切断（自動ログアウト）
+      auth.signOut();
+      console.log("管理画面から離れたため、安全に自動ログアウトしました。");
+    };
+  }, [auth]); // 💡 依存配列に auth を追加
 
   const applySnowSettings = (value: number) => {
     setActualSnowCount(value);
@@ -101,7 +113,7 @@ export const Admin: React.FC = () => {
   };
 
   const handleGenerateFakePins = () => {
-    alert("会津若松駅周辺に幻のピンを10個生成しました");
+    alert("会津若松駅周辺に幻 of ピンを10個生成しました");
     addLog("INFO", "支配者コマンド: サクラ投稿によりピンを10個生成しました。");
   };
 
@@ -112,13 +124,12 @@ export const Admin: React.FC = () => {
     }
   };
 
-  // ログの色分け用関数
   const getLogColor = (type: LogItem["type"]) => {
     switch (type) {
-      case "WARN": return "#ff4d6d"; // 赤
-      case "SYSTEM": return "#00bfff"; // 青
-      case "LOVE": return "#ff00ff"; // ピンク
-      default: return "#39ff14"; // ネオングリーン
+      case "WARN": return "#ff4d6d";
+      case "SYSTEM": return "#00bfff";
+      case "LOVE": return "#ff00ff";
+      default: return "#39ff14";
     }
   };
 
@@ -131,7 +142,8 @@ export const Admin: React.FC = () => {
             {!isAdmin ? (
               <Box component="form" onSubmit={handleLogin} sx={{ maxWidth: 400, mx: "auto" }}>
                 <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 3, color: "#333" }}>🛠️ 管理者ログイン</Typography>
-                <TextField label="ログインID" fullWidth variant="outlined" value={idInput} onChange={(e) => setIdInput(e.target.value)} sx={{ mb: 2 }} />
+                {/* 💡 メールアドレス入力に変更 */}
+                <TextField label="管理者メールアドレス" fullWidth variant="outlined" value={emailInput} onChange={(e) => setEmailInput(e.target.value)} sx={{ mb: 2 }} />
                 <TextField label="パスワード" type="password" fullWidth variant="outlined" value={passwordInput} onChange={(e) => setPasswordInput(e.target.value)} sx={{ mb: 2 }} />
                 {errorMsg && <Typography variant="body2" color="error" sx={{ mb: 2 }}>{errorMsg}</Typography>}
                 <Button type="submit" variant="contained" color="primary" fullWidth sx={{ fontWeight: "bold" }}>ログイン</Button>
@@ -142,7 +154,6 @@ export const Admin: React.FC = () => {
                 <Typography variant="body2" align="center" sx={{ mb: 4, color: "#888" }}>※他ページに移動すると自動でログアウトされ、セッションが切れます。</Typography>
 
                 <Grid container spacing={4}>
-                  {/* セクション1：天候操作 */}
                   <Grid item xs={12} sm={6}>
                     <Paper variant="outlined" sx={{ p: 3, borderRadius: 2, height: "100%" }}>
                       <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#1976d2", mb: 2 }}>🌨️ 1. 天候・気象コントロール</Typography>
@@ -156,7 +167,6 @@ export const Admin: React.FC = () => {
                     </Paper>
                   </Grid>
 
-                  {/* セクション2：退会画面の難易度設定 */}
                   <Grid item xs={12} sm={6}>
                     <Paper variant="outlined" sx={{ p: 3, borderRadius: 2, height: "100%" }}>
                       <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#cc0000", mb: 2 }}>💔 2. 退会画面（Drop）のメンヘラ度調整</Typography>
@@ -165,7 +175,6 @@ export const Admin: React.FC = () => {
                     </Paper>
                   </Grid>
 
-                  {/* セクション3：世界の支配者 */}
                   <Grid item xs={12} sm={6}>
                     <Paper variant="outlined" sx={{ p: 3, borderRadius: 2 }}>
                       <Typography variant="subtitle1" sx={{ fontWeight: "bold", color: "#e65100", mb: 2 }}>🗺️ 3. マップデータ支配</Typography>
@@ -176,7 +185,6 @@ export const Admin: React.FC = () => {
                     </Paper>
                   </Grid>
 
-                  {/* 📊 セクション4：【本物】リアルタイムログ */}
                   <Grid item xs={12} sm={6}>
                     <Paper variant="outlined" sx={{ p: 3, borderRadius: 2, bgcolor: "#1e1e1e", color: "#39ff14", height: "100%" }}>
                       <Typography variant="subtitle2" sx={{ fontFamily: "monospace", mb: 1, color: "#fff" }}>📟 本物のリアルタイムログ監視</Typography>

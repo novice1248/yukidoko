@@ -27,11 +27,9 @@ export const Drop: React.FC = () => {
   const navigate = useNavigate();
   const auth = getAuth();
 
-  // 💡 管理画面の設定を読み込む（未設定ならデフォルト値）
   const maxEscape = localStorage.getItem("admin_max_escape") !== null ? Number(localStorage.getItem("admin_max_escape")) : 10;
   const quizAnswer = localStorage.getItem("admin_quiz_answer") || "ゆきどこ";
 
-  // マウスホバーで逃げる関数
   const handleButtonEscape = () => {
     if (step === 1) {
       if (escapeCount < maxEscape) {
@@ -40,7 +38,6 @@ export const Drop: React.FC = () => {
         setBtnTranslate({ x: randomX, y: randomY });
         setEscapeCount((prev) => {
           const nextCount = prev + 1;
-          // 💡 逃げたことを管理画面に密告
           window.dispatchEvent(new CustomEvent("app_log_event", {
             detail: { type: "INFO", text: `ユーザーが退会ボタンに接近！ボタンが逃げました（通算 ${nextCount} 回目）` }
           }));
@@ -48,7 +45,6 @@ export const Drop: React.FC = () => {
         });
       } else {
         setBtnTranslate({ x: 0, y: 0 });
-        // 💡 諦めたことを密告
         window.dispatchEvent(new CustomEvent("app_log_event", {
           detail: { type: "WARN", text: `退会ボタンが降伏しました。ボタンが中央にとどまっています。` }
         }));
@@ -67,49 +63,6 @@ export const Drop: React.FC = () => {
       alert("エラーだって。神様も別れるなって言ってるんだよ（再ログインしてみてね）");
       setDialogOpen(false);
     }
-  };
-
-  const RenderActionButtons = ({ nextAction, isDeleteDisabled = false }: { nextAction: () => void, isDeleteDisabled?: boolean }) => {
-    return (
-      <Box display="flex" justifyContent="space-between" alignItems="center" mt={4} px={2}>
-        {/* 🔴 左側：赤地に白文字で「マイページに戻る」 */}
-        <Button
-          variant="contained"
-          onClick={() => {
-            // 💡 トラップに引っかかったことを管理画面に密告
-            window.dispatchEvent(new CustomEvent("app_log_event", {
-              detail: { type: "WARN", text: `ユーザーがトラップ赤ボタンを踏み、マイページに強制送還されました！ザマァ！` }
-            }));
-            navigate("/Mypage");
-          }}
-          // 〜以下、sx 属性などはそのまま〜
-          sx={{
-            backgroundColor: "#ff0000",
-            color: "#ffffff",
-            fontWeight: "bold",
-            borderRadius: 2,
-            padding: "8px 20px",
-            '&:hover': { backgroundColor: "#cc0000" }
-          }}
-        >
-          マイページに戻る
-        </Button>
-
-        <Button
-          variant="text"
-          color="primary"
-          disabled={isDeleteDisabled}
-          onClick={nextAction}
-          sx={{
-            textDecoration: "underline",
-            fontSize: "0.9rem",
-            fontWeight: "bold"
-          }}
-        >
-          アカウントを削除する
-        </Button>
-      </Box>
-    );
   };
 
   return (
@@ -172,16 +125,16 @@ export const Drop: React.FC = () => {
                   sx={{ mb: 1 }}
                 />
 
-                {/* 共通ボタン（10文字以上で右側の削除ボタンが活性化） */}
+                {/* 💡 【バグ修正】nextActionで正しくステップ3へ遷移するように修正。文言のバグも修正 */}
                 <RenderActionButtons 
+                  navigate={navigate}
                   nextAction={() => {
-                    // 💡 必死に書いた作文の内容を管理画面に盗み見させるログ
                     window.dispatchEvent(new CustomEvent("app_log_event", {
-                      detail: { type: "LOVE", text: `愛の作文を傍受（${reasonInput.length}文字）: 「${reasonInput}」` }
+                      detail: { type: "INFO", text: `ユーザーがクイズ関門を突破し、作文ステージに進みました。` }
                     }));
-                    setDialogOpen(true);
+                    setStep(3);
                   }} 
-                  isDeleteDisabled={reasonInput.length < 10} 
+                  isDeleteDisabled={quizInput !== quizAnswer} 
                 />
               </Box>
             )}
@@ -214,7 +167,13 @@ export const Drop: React.FC = () => {
                 </Typography>
 
                 <RenderActionButtons 
-                  nextAction={() => setDialogOpen(true)} 
+                  navigate={navigate}
+                  nextAction={() => {
+                    window.dispatchEvent(new CustomEvent("app_log_event", {
+                      detail: { type: "LOVE", text: `愛の作文を傍受（${reasonInput.length}文字）: 「${reasonInput}」` }
+                    }));
+                    setDialogOpen(true);
+                  }} 
                   isDeleteDisabled={reasonInput.length < 10} 
                 />
               </Box>
@@ -267,6 +226,53 @@ export const Drop: React.FC = () => {
         </DialogActions>
       </Dialog>
     </Container>
+  );
+};
+
+// 💡 【アンチパターン解消】サブコンポーネントを外側に配置
+interface RenderActionButtonsProps {
+  navigate: ReturnType<typeof useNavigate>;
+  nextAction: () => void;
+  isDeleteDisabled: boolean;
+}
+
+const RenderActionButtons: React.FC<RenderActionButtonsProps> = ({ navigate, nextAction, isDeleteDisabled }) => {
+  return (
+    <Box display="flex" justifyContent="space-between" alignItems="center" mt={4} px={2}>
+      <Button
+        variant="contained"
+        onClick={() => {
+          window.dispatchEvent(new CustomEvent("app_log_event", {
+            detail: { type: "WARN", text: `ユーザーがトラップ赤ボタンを踏み、マイページに強制送還されました！ザマァ！` }
+          }));
+          navigate("/Mypage");
+        }}
+        sx={{
+          backgroundColor: "#ff0000",
+          color: "#ffffff",
+          fontWeight: "bold",
+          borderRadius: 2,
+          padding: "8px 20px",
+          '&:hover': { backgroundColor: "#cc0000" }
+        }}
+      >
+        マイページに戻る
+      </Button>
+
+      <Button
+        variant="text"
+        color="primary"
+        disabled={isDeleteDisabled}
+        onClick={nextAction}
+        sx={{
+          textDecoration: "underline",
+          fontSize: "0.9rem",
+          fontWeight: "bold"
+        }}
+      >
+        アカウントを削除する
+      </Button>
+    </Box>
   );
 };
 

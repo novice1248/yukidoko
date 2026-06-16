@@ -11,10 +11,10 @@ import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import styles from './css/App.module.css';
 import Register from "./pages/Register";
 import SetPassword from "./pages/SetPassword";
-import Admin from "./pages/Admin"; // 追加
+import Admin from "./pages/Admin";
 
-// 💡 Snackbar と Alert をインポートに追加
-import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Button, Snackbar, Alert } from "@mui/material";
+// 💡 @mui/material のインポートに「Box」を追加
+import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Button, Snackbar, Alert, Box } from "@mui/material";
 
 
 function AppContent() {
@@ -138,6 +138,40 @@ function AppContent() {
           {snackbarMessage}
         </Alert>
       </Snackbar>
+
+      {/* 🤫 全画面の右下にひっそり配置される、管理者専用の裏口ボタン */}
+      <Box 
+        sx={{ 
+            position: "fixed", 
+            bottom: 20, 
+            right: 20, 
+            zIndex: 999 
+        }}
+      >
+        <Button 
+            onClick={() => navigate("/Admin")}
+            variant="outlined"
+            sx={{ 
+                fontSize: "0.85rem", 
+                color: "rgba(44, 62, 80, 0.3)", 
+                borderColor: "rgba(44, 62, 80, 0.2)", 
+                minWidth: "auto",
+                padding: "6px 12px", 
+                borderRadius: "12px",
+                backgroundColor: "rgba(255, 255, 255, 0.1)", 
+                backdropFilter: "blur(4px)", 
+                transition: "all 0.3s ease",
+                '&:hover': { 
+                    color: "#0056b3", 
+                    borderColor: "#0056b3",
+                    backgroundColor: "rgba(255, 255, 255, 0.8)", 
+                    transform: "scale(1.05)"
+                }
+            }}
+        >
+            ⚙️ 管理画面
+        </Button>
+      </Box>
     </div>
   );
 }
