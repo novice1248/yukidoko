@@ -3,7 +3,7 @@ import Home from "./pages/Home";
 import NotLogin from "./pages/NotLogin";
 import GoogleMapAPI from "./pages/GoogleMap";
 import { Login } from "./pages/Login";
-import Auth from "./pages/Auth";
+//import Auth from "./pages/Auth";
 import Logout from "./pages/Logout";
 import Logined from "./pages/Logined";
 import Snowfall from "./Snowfall";
@@ -76,7 +76,7 @@ function App() {
           {/* 認証状態を渡す */}
           <Route path="/home" element={<Home isAuthenticated={isAuthenticated} />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/auth" element={<Auth />} />
+          {/* <Route path="/auth" element={<Auth />} /> */}
           <Route path="/NotLogin" element={<NotLogin />} />
           <Route path="/Logout" element={<Logout />} />
           <Route path="/Search" element={<GoogleMapAPI />} />
