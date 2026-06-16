@@ -19,7 +19,7 @@ function Home({ isAuthenticated }: HomeProps) {
         {/* ボタンを文章のすぐ下に配置 */}
         <div className={styles.homeActions}>
           <Link to="/Search" className={styles.btnSearch}>探す</Link>
-          <Link to={isAuthenticated ? "/Search" : "/NotLogin"} className={styles.btnShare}>
+          <Link to={isAuthenticated ? "/Search" : "/login"} className={styles.btnShare}>
             共有する
           </Link>
         </div>

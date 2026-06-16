@@ -88,7 +88,7 @@ export const Login: React.FC = () => {
                 setOpen(true);
                 // ポップアップを見せるために1秒待って遷移
                 setTimeout(() => {
-                    navigate("/Logined");
+                    navigate("/home");
                 }, 1000);
             }
         });

@@ -7,7 +7,7 @@ body {
   /* 少し青みのある上品な濃いグレー（文字を読みやすく） */
 }
 
-/* ヘッダー全体のレイアウト（横並びにする） */
+/* ヘッダー全体のレイアウト調整 */
 .header {
   display: flex;
   justify-content: space-between;
