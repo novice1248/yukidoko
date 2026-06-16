@@ -4,7 +4,8 @@ import { getAuth, signInWithPopup, signInWithEmailAndPassword, updateProfile, ge
 import { Box, Button, Container, Grid, TextField, Typography, Paper, Snackbar, Alert } from "@mui/material";
 
 export const Login: React.FC = () => {
-    const [email, setEmail] = useState("");
+    // 💡 入力欄のステートを「IDまたはメールアドレス」に変更
+    const [loginIdOrEmail, setLoginIdOrEmail] = useState("");
     const [password, setPassword] = useState("");
     const [displayName, setDisplayName] = useState("");
     const [mode, setMode] = useState<"login" | "googleSetup">("login");
@@ -52,16 +53,27 @@ export const Login: React.FC = () => {
         }
     };
 
-    const handleEmailLogin = async () => {
-        if (!email || !password) return;
+    // 💡 IDまたはメールアドレスでのログイン判定ロジック
+    const handleIdOrEmailLogin = async () => {
+        if (!loginIdOrEmail || !password) return;
+        
+        let finalEmail = loginIdOrEmail.trim();
+
+        // 💡 入力された文字列に「@」が含まれていない場合は「ユーザーID」と判定
+        if (!finalEmail.includes("@")) {
+            // 裏側で自動的に疑似メールアドレスの形式へ変換
+            finalEmail = `${finalEmail}@yukidoko.local`;
+        }
+
         try {
-            await signInWithEmailAndPassword(auth, email, password);
+            // 判定して確定したアドレス（または疑似アドレス）でFirebaseに認証をリクエスト
+            await signInWithEmailAndPassword(auth, finalEmail, password);
             setAlertMessage("ログインしました。");
             setAlertSeverity("success");
             setOpen(true);
             setTimeout(() => navigate("/home"), 1000);
         } catch (error: any) {
-            setAlertMessage("メールアドレスまたはパスワードが間違っています。");
+            setAlertMessage("ユーザーID、メールアドレス、またはパスワードが間違っています。");
             setAlertSeverity("error");
             setOpen(true);
         }
@@ -82,10 +94,19 @@ export const Login: React.FC = () => {
                         ) : (
                             <Box component="div" sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                                 <Typography variant="h5" align="center" gutterBottom sx={{ fontWeight: 'bold', mb: 3 }}>ログイン</Typography>
-                                <TextField label="メールアドレス" variant="outlined" value={email} onChange={(e) => setEmail(e.target.value)} fullWidth required />
+                                
+                                {/* 💡 ラベルを「ユーザーIDまたはメールアドレス」にアップデート */}
+                                <TextField 
+                                    label="ユーザーID または メールアドレス" 
+                                    variant="outlined" 
+                                    value={loginIdOrEmail} 
+                                    onChange={(e) => setLoginIdOrEmail(e.target.value)} 
+                                    fullWidth 
+                                    required 
+                                />
                                 <TextField label="パスワード" variant="outlined" type="password" value={password} onChange={(e) => setPassword(e.target.value)} fullWidth required />
 
-                                <Button variant="contained" color="primary" size="large" onClick={handleEmailLogin} sx={{ mt: 1, borderRadius: 2 }}>メールアドレスでログイン</Button>
+                                <Button variant="contained" color="primary" size="large" onClick={handleIdOrEmailLogin} sx={{ mt: 1, borderRadius: 2 }}>ログイン</Button>
                                 <Button variant="outlined" color="inherit" size="large" onClick={signInWithGoogle} sx={{ borderRadius: 2 }}>Google でログイン / 登録</Button>
 
                                 <Box display="flex" justifyContent="space-between" mt={1}>
@@ -97,23 +118,11 @@ export const Login: React.FC = () => {
                         <Snackbar open={open} autoHideDuration={3000} onClose={() => setOpen(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
                             <Alert severity={alertSeverity} sx={{ width: '100%', borderRadius: 2 }}>{alertMessage}</Alert>
                         </Snackbar>
-                    {/* 🤫 右下にひっそり隠された、管理者専用の裏口ボタン */}
-    {/* 🤫 右下にひっそり隠された、管理者専用の裏口ボタン（ちょっと拡大版） */}
-    <Box 
-        sx={{ 
-            position: "fixed", 
-            bottom: 20, // 少し内側に寄せて押しやすく
-            right: 20, 
-            zIndex: 999 
-        }}
-    >
-        
-    </Box>
-
-  </Paper>
-</Grid>
-</Grid>
-</Container> // 👈 一番最後の閉じタグのすぐ上が定位置です
+                    </Paper>
+                </Grid>
+            </Grid>
+        </Container>
     );
 };
+
 export default Login;
