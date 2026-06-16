@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
   GoogleMap,
   useJsApiLoader,
@@ -10,7 +10,7 @@ import { db } from "../firebase";
 import { collection, addDoc, getDocs } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 
-// LevelData インターフェースを追加
+// LevelData インターフェース
 interface LevelData {
   id: string;
   label: string;
@@ -30,7 +30,7 @@ interface MarkerData {
   isEditable: boolean;
   isPlaced: boolean;
   timestamp: string;
-  userName?: string; // ユーザー名を追加（オプション）
+  userName?: string;
 }
 
 const libraries: ("places" | "geometry" | "drawing")[] = ["places", "geometry"];
@@ -52,7 +52,6 @@ function GoogleMapAPI() {
 
   const mapRef = useRef<google.maps.Map | null>(null);
 
-  // LevelData を使うステート
   const [levels] = useState<LevelData[]>([
     { id: "Level1", label: "雪がない", color: "green" },
     { id: "Level2", label: "歩行しやすい", color: "yellow" },
@@ -67,12 +66,10 @@ function GoogleMapAPI() {
       setAvailable(true);
       getCurrentPosition();
       const interval = setInterval(getCurrentPosition, 5000);
-      // ★ Firestore からの読み込みを必ず呼び出す
       loadPinsFromFirestore();
       return () => clearInterval(interval);
     } else {
       setAvailable(false);
-      // ★ Geolocation 非対応ならこちらで呼び出し
       loadPinsFromFirestore();
     }
   }, []);
@@ -91,13 +88,25 @@ function GoogleMapAPI() {
     );
   };
 
-  // ポリラインまたはマーカーから外れた未確定マーカーを削除する関数
   const handleRemoveMarker = (marker: MarkerData) => {
     setMarkers((prev) => prev.filter((m) => m !== marker));
   };
 
   const handleMapClick = (event: google.maps.MapMouseEvent) => {
     if (!event.latLng) return;
+
+    // 💡 【新機能】ログイン状態の厳密チェック
+    const auth = getAuth();
+    const user = auth.currentUser;
+
+    if (!user) {
+      // ログインしていなければエラーを表示して処理を完全にブロック
+      setErrorMessage("ピンを設置するにはログインが必要です");
+      window.dispatchEvent(new CustomEvent("app_log_event", {
+        detail: { type: "WARN", text: "ゲストユーザーがマップをクリックしました。ログインしていないためピン設置を阻止しました。" }
+      }));
+      return;
+    }
 
     // まだ保存（確定）していない選択中のマーカーがあれば削除してリセット
     if (selectedMarker && !selectedMarker.isPlaced) {
@@ -135,7 +144,7 @@ function GoogleMapAPI() {
       }
     }
 
-    // ★ 3. 条件判定：30m以内で、かつ10m以内に既存ピンがない場合のみ設置処理へ
+    // 3. 条件判定：30m以内で、かつ10m以内に既存ピンがない場合のみ設置処理へ
     if (isWithinPolyLine && !isWithinMarker) {
 
       // 【12時間経過した古いピンの置き換えチェック】
@@ -147,7 +156,6 @@ function GoogleMapAPI() {
       });
 
       if (markersToCheck.length > 0) {
-        // 一番近い古いピンを特定して削除
         let closestMarker = markersToCheck[0];
         let closestDistance = google.maps.geometry.spherical.computeDistanceBetween(
           newMarkerPosition,
@@ -179,13 +187,11 @@ function GoogleMapAPI() {
       };
       setMarkers((prevMarkers) => [...prevMarkers, newMarker]);
       setSelectedMarker(newMarker);
-      setErrorMessage(""); // エラーをクリア
+      setErrorMessage(""); 
 
     } else if (!isWithinPolyLine) {
-      // 30mより外側ならメッセージを出すだけで、setMarkersはしない（ブロック）
       setErrorMessage(`マーカーはポリラインの${distancePolyLine}m以内にのみ追加できます`);
     } else if (isWithinMarker) {
-      // 10m以内ならメッセージを出すだけで、setMarkersはしない（ブロック）
       setErrorMessage(`マーカーは既存のマーカーから${distanceMarker}m以内には設置できません`);
     }
   };
@@ -213,7 +219,6 @@ function GoogleMapAPI() {
     }
   };
 
-  // マーカーを確定する関数（例: レベル選択後に編集モードを解除）
   const handleSaveMarker = (levelId: string) => {
     if (selectedMarker && selectedMarker.isEditable) {
       console.log("保存ボタンがクリックされました");
@@ -230,7 +235,6 @@ function GoogleMapAPI() {
         )
       );
       setSelectedMarker(updatedMarker);
-      // Firestore に保存
       savePinToFirestore(updatedMarker);
       console.log("更新されたマーカー:", updatedMarker);
     }
@@ -240,28 +244,21 @@ function GoogleMapAPI() {
     try {
       console.log("Firestore からピンを取得開始...");
       const querySnapshot = await getDocs(collection(db, "pins"));
-      console.log("querySnapshot:", querySnapshot);
-
       const loadedMarkers: MarkerData[] = [];
       querySnapshot.forEach((doc) => {
         const data = doc.data();
-        console.log("取得データ:", data);
-
-        // データがなければデフォルト値を入れるように
         const marker: MarkerData = {
           lat: data.lat ?? 0,
           lng: data.lng ?? 0,
           title: data.title ?? "未設定",
           levelId: data.levelId ?? "N/A",
           isEditable: false,
-          isPlaced: true, // すでに設置済みとする
+          isPlaced: true, 
           timestamp: data.timestamp ?? new Date().toISOString(),
           userName: data.userName ?? "匿名",
         };
         loadedMarkers.push(marker);
       });
-
-      console.log("Firestore から取得したピン (マーカー配列):", loadedMarkers);
       setMarkers(loadedMarkers);
     } catch (error) {
       console.error("Firestore からピンの取得に失敗:", error);
@@ -284,7 +281,7 @@ function GoogleMapAPI() {
       zoom={zoom}
       onLoad={(map) => {
         mapRef.current = map;
-      }} // マップインスタンスを保持
+      }} 
       onZoomChanged={handleZoomChanged}
       options={{
         mapId: mapId,
@@ -340,7 +337,6 @@ function GoogleMapAPI() {
         <InfoWindow
           position={{ lat: selectedMarker.lat, lng: selectedMarker.lng }}
           onCloseClick={() => {
-            // 未確定マーカーなら削除
             if (!selectedMarker.isPlaced) {
               handleRemoveMarker(selectedMarker);
             }
@@ -353,7 +349,6 @@ function GoogleMapAPI() {
             <p>日時: {new Date(selectedMarker.timestamp).toLocaleString()}</p>
             <p>レベル: {selectedMarker.levelId}</p>
 
-            {/* レベル変更ボタン例 */}
             {selectedMarker.isEditable && (
               <div>
                 {levels.map((level) => (

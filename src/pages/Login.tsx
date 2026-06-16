@@ -107,29 +107,7 @@ export const Login: React.FC = () => {
             zIndex: 999 
         }}
     >
-        <Button 
-            onClick={() => navigate("/admin")}
-            variant="outlined" // 💡 うっすら枠線をつけてボタンっぽさを認識しやすく
-            sx={{ 
-                fontSize: "0.85rem", // 💡 0.65rem から少しサイズアップ
-                color: "rgba(44, 62, 80, 0.3)", // 普段の文字色をベースに薄く
-                borderColor: "rgba(44, 62, 80, 0.2)", // 枠線も最初はうっすら
-                minWidth: "auto",
-                padding: "6px 12px", // 💡 指やマウスでしっかり捉えられるサイズに
-                borderRadius: "12px",
-                backgroundColor: "rgba(255, 255, 255, 0.1)", // 背景に馴染む半透明
-                backdropFilter: "blur(4px)", // すりガラス風（お洒落ポイント）
-                transition: "all 0.3s ease",
-                '&:hover': { 
-                    color: "#0056b3", // マウスを乗せたらクッキリきれいな青に
-                    borderColor: "#0056b3",
-                    backgroundColor: "rgba(255, 255, 255, 0.8)", // ホバー時はしっかり白ベースに
-                    transform: "scale(1.05)"
-                }
-            }}
-        >
-            ⚙️ 管理画面
-        </Button>
+        
     </Box>
 
   </Paper>
