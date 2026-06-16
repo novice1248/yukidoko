@@ -82,11 +82,6 @@ const MyPage = () => {
           メールアドレス: {isGoogleLogin ? "Googleでログイン中" : user?.email || "登録されていません"}
         </Typography>
         <Box mt={4}>
-          {!isGoogleLogin && (
-            <Button variant="contained" color="primary" onClick={() => navigate("/ResetLogin")} sx={{ m: 1 }}>
-              パスワード再設定
-            </Button>
-          )}
           <Button variant="contained" color="error" onClick={() => navigate("/Drop")} sx={{ m: 1 }}>
             アカウント削除
           </Button>

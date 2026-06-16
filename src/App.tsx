@@ -6,30 +6,15 @@ import MyPage from "./pages/Mypage";
 import ResetLogin from "./pages/ResetLogin";
 import Drop from "./pages/Drop";
 import Snowfall from "./Snowfall";
-import { JSX, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import styles from './css/App.module.css';
+import Register from "./pages/Register";
+import SetPassword from "./pages/SetPassword";
 
 // 💡 Snackbar と Alert をインポートに追加
 import { Dialog, DialogActions, DialogContent, DialogContentText, DialogTitle, Button, Snackbar, Alert } from "@mui/material";
 
-function PrivateRoute({ element }: { element: JSX.Element }) {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
-  const auth = getAuth();
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setIsAuthenticated(!!user);
-    });
-    return () => unsubscribe();
-  }, [auth]);
-
-  if (isAuthenticated === null) {
-    return <p>読み込み中...</p>;
-  }
-
-  return isAuthenticated ? element : <Navigate to="/Login" replace />;
-}
 
 function AppContent() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -108,6 +93,8 @@ function AppContent() {
         <Route path="/ResetLogin" element={<ResetLogin />} />
         <Route path="/Drop" element={<Drop />} />
         <Route path="/Mypage" element={<MyPage />} />
+        <Route path="/Register" element={<Register />} />
+        <Route path="/SetPassword" element={<SetPassword />} />
       </Routes>
 
       {/* 確認ポップアップ（ダイアログ） */}
