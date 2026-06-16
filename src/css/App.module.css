@@ -1,154 +1,226 @@
 body {
-  background-color: #B0C4DE; /* もう少し暗いパステルブルー */
+  background-color: #B0C4DE;
+  /* パステルブルー */
+  margin: 0;
+  font-family: 'Helvetica Neue', Arial, sans-serif;
+  color: #2c3e50;
+  /* 少し青みのある上品な濃いグレー（文字を読みやすく） */
+}
+
+/* ヘッダー全体のレイアウト調整 */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 40px;
+  position: relative;
+  z-index: 100;
 }
 
 .title {
-
   color: transparent;
   -webkit-text-stroke: 2px #454545;
   text-shadow: 3px 3px #81bedb;
-  cursor: pointer; /* クリック可能であることを示す */
+  cursor: pointer;
   transition: transform 0.3s ease, text-shadow 0.3s ease;
   font-size: 2rem;
+  text-decoration: none;
 }
 
 .title:hover {
-  transform: scale(1.1); /* 少し拡大 */
-  text-shadow: 5px 5px #81bedb; /* 影を強調 */
+  transform: scale(1.05);
+  text-shadow: 5px 5px #81bedb;
 }
 
-
-/* 全体のリセット */
-nav {
-  position: relative;
-  width: 100%;
-}
-
-/* リストのスタイルリセット */
-nav ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center; /* ホームボタンを中央に配置 */
-  position: relative;
-}
-
-/* ログイン・新規登録エリア */
+/* 右上のログイン周り */
 .navAuth {
-  position: relative;
-  top: 0px;
-  right: 20px;
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  z-index: 10;
+  align-items: center;
 }
 
-
-/* 探す・共有するエリア */
-.navActions {
-  display: flex;
-  gap: 50px; /* ボタン間のスペース */
-}
-
-/* ボタン共通スタイル */
-nav a {
+.loginBtn {
   display: inline-block;
-  padding: 10px 20px;
-  background-color: #007bff; /* ボタン色 */
+  padding: 10px 24px;
+  background-color: #0056b3;
   color: white;
   text-decoration: none;
-  border-radius: 5px;
-  transition: background 0.3s, transform 0.2s;
-  font-weight: bold;
-  text-align: center;
-}
-
-nav a:hover {
-  background-color: #0056b3;
-  transform: scale(1.05);
-}
-
-/* ログイン・新規登録のデザイン変更 */
-.navAuth a {
-  background-color: #0056b3;
-}
-
-.navAuth a:hover {
-  background-color: #010101;
-  transform: scale(1.05);
-}
-
-/* レスポンシブ対応 */
-@media (max-width: 600px) {
-  .navAuth {
-    top: 5px;
-    right: 10px;
-  }
-
-  .navActions {
-    flex-direction: column;
-    gap: 5px;
-  }
-
-}
-
-.navActions li:nth-child(1) a {
-  background-color: #AEEEEE; /* パステルブルー */
-  color: #004466;
   border-radius: 50px;
+  /* 丸っこくて可愛いボタンに */
+  font-weight: bold;
+  transition: background 0.3s, transform 0.2s;
 }
 
-.navActions li:nth-child(1) a:hover {
+.loginBtn:hover {
+  background-color: #003570;
+  transform: scale(1.05);
+}
+
+.loginedLinks {
+  display: flex;
+  gap: 15px;
+}
+
+.headerLink {
+  color: #2c3e50;
+  text-decoration: none;
+  font-weight: bold;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.4);
+  border-radius: 20px;
+  transition: background 0.3s;
+}
+
+.headerLink:hover {
+  background: rgba(255, 255, 255, 0.7);
+}
+
+/* --- ここからホーム画面（中央配置＆すりガラス）のデザイン --- */
+
+.homeContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px 20px;
+  min-height: 80vh;
+  box-sizing: border-box;
+}
+
+/* メインの「すりガラス風」の座布団カード */
+.heroCard {
+  background: rgba(255, 255, 255, 0.25);
+  /* 白の半透明 */
+  backdrop-filter: blur(12px);
+  /* 後ろの雪が綺麗にボケる魔法の1行 */
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 40px;
+  border-radius: 24px;
+  max-width: 800px;
+  text-align: center;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.08);
+  margin-bottom: 50px;
+}
+
+.heroTitle {
+  font-size: 2.2rem;
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #1a252f;
+}
+
+.heroDescription {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  margin-bottom: 30px;
+}
+
+/* ボタンの横並びコンテナ */
+.homeActions {
+  display: flex;
+  justify-content: center;
+  gap: 30px;
+}
+
+/* 「探す」「共有する」の共通ベース */
+.homeActions a {
+  display: inline-block;
+  padding: 16px 40px;
+  font-size: 1.3rem;
+  font-weight: bold;
+  text-decoration: none;
+  border-radius: 50px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.homeActions a:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+/* 探すボタン（パステルブルー） */
+.btnSearch {
+  background-color: #AEEEEE;
+  color: #004466;
+}
+
+.btnSearch:hover {
   background-color: #90D7EC;
 }
 
-/* 共有するボタン */
-.navActions li:nth-child(2) a {
-  background-color: #FFB6C1; /* パステルピンク */
+/* 共有するボタン（パステルピンク） */
+.btnShare {
+  background-color: #FFB6C1;
   color: #800040;
-  border-radius: 50px;
 }
 
-.navActions li:nth-child(2) a:hover {
+.btnShare:hover {
   background-color: #FFA0B2;
 }
 
-/*「探す」「共有する」ボタンのみ大きくする*/
-.navActions li a {
-  padding: 15px 30px; /* ボタンを大きくする */
-  font-size: 1.2rem; /* 文字サイズを大きく */
-}
+/* --- 下部の3つの特徴エリア --- */
 
-
-@keyframes snowfall {
-  from {
-    transform: translateY(-10vh);
-    opacity: 1;
-  }
-  to {
-    transform: translateY(100vh);
-    opacity: 0;
-  }
-}
-
-.snowflake {
-  position: absolute;
-  top: -10px;
-  background-color: white;
-  border-radius: 50%;
-  opacity: 0.8;
-  animation: snowfall linear infinite;
-}
-
-.snowContainer {
-  position: fixed;
-  top: 0;
-  left: 0;
+.featuresSection {
+  display: flex;
+  gap: 30px;
+  max-width: 1000px;
   width: 100%;
-  height: 100%;
-  pointer-events: none;
-  z-index: -1;
+  justify-content: center;
+}
+
+.featureCard {
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  padding: 24px;
+  border-radius: 16px;
+  flex: 1;
+  max-width: 280px;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+  transition: transform 0.3s;
+}
+
+.featureCard:hover {
+  transform: translateY(-5px);
+}
+
+.featureIcon {
+  font-size: 2.5rem;
+  margin-bottom: 10px;
+}
+
+.featureCard h3 {
+  margin: 10px 0;
+  color: #1a252f;
+}
+
+.featureCard p {
+  font-size: 0.9rem;
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* レスポンシブ対応：スマホ表示のときは縦並びにする */
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    gap: 15px;
+    padding: 20px;
+  }
+
+  .homeActions {
+    flex-direction: column;
+    gap: 15px;
+  }
+
+  .featuresSection {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .featureCard {
+    max-width: 100%;
+  }
 }

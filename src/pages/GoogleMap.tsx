@@ -30,6 +30,7 @@ interface MarkerData {
   isEditable: boolean;
   isPlaced: boolean;
   timestamp: string;
+  userName?: string; // ユーザー名を追加（オプション）
 }
 
 const libraries: ("places" | "geometry" | "drawing")[] = ["places", "geometry"];
@@ -98,6 +99,7 @@ function GoogleMapAPI() {
   const handleMapClick = (event: google.maps.MapMouseEvent) => {
     if (!event.latLng) return;
 
+    // まだ保存（確定）していない選択中のマーカーがあれば削除してリセット
     if (selectedMarker && !selectedMarker.isPlaced) {
       handleRemoveMarker(selectedMarker);
     }
@@ -108,7 +110,7 @@ function GoogleMapAPI() {
     let isWithinPolyLine = false;
     let isWithinMarker = false;
 
-    // ポリライン上の各点との距離を計算し、30m以内かどうかをチェック
+    // 1. ポリライン（現在地ルート）の30m以内かチェック
     for (let i = 0; i < path.length; i++) {
       const distanceBetweenPolyLine = google.maps.geometry.spherical.computeDistanceBetween(
         newMarkerPosition,
@@ -120,7 +122,7 @@ function GoogleMapAPI() {
       }
     }
 
-    // 既存のマーカーと距離をチェック
+    // 2. 既存のマーカーから10m以内かチェック
     for (let i = 0; i < markers.length; i++) {
       const existingMarker = markers[i];
       const distanceBetweenMarker = google.maps.geometry.spherical.computeDistanceBetween(
@@ -131,17 +133,21 @@ function GoogleMapAPI() {
         isWithinMarker = true;
         break;
       }
+    }
 
-      // 12時間経過しているマーカーを探し、設置できる場所を決める
+    // ★ 3. 条件判定：30m以内で、かつ10m以内に既存ピンがない場合のみ設置処理へ
+    if (isWithinPolyLine && !isWithinMarker) {
+
+      // 【12時間経過した古いピンの置き換えチェック】
       const markersToCheck = markers.filter((marker) => {
         const markerTimestamp = new Date(marker.timestamp);
         const currentTime = new Date();
         const timeDiff = currentTime.getTime() - markerTimestamp.getTime();
-        return timeDiff >= 12 * 60 * 60 * 1000; // 12時間以上経過したマーカー
+        return timeDiff >= 12 * 60 * 60 * 1000;
       });
 
-      // 12時間経過したマーカーがある場合、周囲に新しいマーカーを設置できるか確認
       if (markersToCheck.length > 0) {
+        // 一番近い古いピンを特定して削除
         let closestMarker = markersToCheck[0];
         let closestDistance = google.maps.geometry.spherical.computeDistanceBetween(
           newMarkerPosition,
@@ -158,32 +164,14 @@ function GoogleMapAPI() {
             closestMarker = marker;
           }
         });
-
-        // 最も近いマーカーを削除
         handleRemoveMarker(closestMarker);
-
-        // 新しいマーカーを設置
-        const newMarker: MarkerData = {
-          lat: newMarkerPosition.lat(),
-          lng: newMarkerPosition.lng(),
-          title: "新しいマーカー",
-          levelId: "Level1",
-          isEditable: true,
-          isPlaced: false,
-          timestamp: new Date().toISOString(),
-        };
-
-        setMarkers((prevMarkers) => [...prevMarkers, newMarker]);
-        setSelectedMarker(newMarker);
-        setErrorMessage(""); // エラーメッセージをリセット
       }
-    }
 
-    if (isWithinPolyLine && !isWithinMarker) {
+      // 新しいマーカーを追加
       const newMarker: MarkerData = {
         lat: newMarkerPosition.lat(),
         lng: newMarkerPosition.lng(),
-        title: "サンプル",
+        title: "新しいマーカー",
         levelId: "Level1",
         isEditable: true,
         isPlaced: false,
@@ -191,17 +179,14 @@ function GoogleMapAPI() {
       };
       setMarkers((prevMarkers) => [...prevMarkers, newMarker]);
       setSelectedMarker(newMarker);
-      setErrorMessage("");
+      setErrorMessage(""); // エラーをクリア
+
     } else if (!isWithinPolyLine) {
-      setErrorMessage(
-        `マーカーはポリラインの${distancePolyLine}m以内にのみ追加できます`
-      );
+      // 30mより外側ならメッセージを出すだけで、setMarkersはしない（ブロック）
+      setErrorMessage(`マーカーはポリラインの${distancePolyLine}m以内にのみ追加できます`);
     } else if (isWithinMarker) {
-      setErrorMessage(
-        `マーカーは既存のマーカーから${distanceMarker}m以内には設置できません`
-      );
-    } else {
-      setErrorMessage("あり得ない挙動です");
+      // 10m以内ならメッセージを出すだけで、setMarkersはしない（ブロック）
+      setErrorMessage(`マーカーは既存のマーカーから${distanceMarker}m以内には設置できません`);
     }
   };
 
@@ -245,8 +230,8 @@ function GoogleMapAPI() {
         )
       );
       setSelectedMarker(updatedMarker);
-          // Firestore に保存
-    savePinToFirestore(updatedMarker);
+      // Firestore に保存
+      savePinToFirestore(updatedMarker);
       console.log("更新されたマーカー:", updatedMarker);
     }
   };
@@ -271,6 +256,7 @@ function GoogleMapAPI() {
           isEditable: false,
           isPlaced: true, // すでに設置済みとする
           timestamp: data.timestamp ?? new Date().toISOString(),
+          userName: data.userName ?? "匿名",
         };
         loadedMarkers.push(marker);
       });
@@ -363,6 +349,7 @@ function GoogleMapAPI() {
         >
           <div>
             <h3>{selectedMarker.title}</h3>
+            <p>投稿者: <strong>{selectedMarker.userName || "名無しのユーザー"}</strong></p>
             <p>日時: {new Date(selectedMarker.timestamp).toLocaleString()}</p>
             <p>レベル: {selectedMarker.levelId}</p>
 

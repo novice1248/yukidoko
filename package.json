@@ -12,7 +12,7 @@
     "predeploy": "npm run build",
     "deploy": "gh-pages -d dist",
     "rebuild": "vite build && rm -R docs && cp -r dist docs",
-        "git": "git add . && git commit && git push origin main"
+    "git": "git add . && git commit && git push origin main"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
